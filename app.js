@@ -138,6 +138,7 @@ function showLogin() {
   document.getElementById('formContainer').style.display = 'none';
   document.getElementById('appHeader').style.display = 'none';
   document.getElementById('openLeaveBtn').style.display = 'none';
+  document.getElementById('openRecordsBtn').style.display = 'none';
 }
 
 function showForm() {
@@ -150,9 +151,10 @@ function showForm() {
   document.getElementById('gpsScopeNote').textContent = REQUIRE_LOGIN
     ? 'GPS is verified for you (the logged-in submitter) only — not individually for every name checked below.'
     : 'GPS is captured with this submission but not tied to a verified account while login is switched off — not individually for every name checked below.';
-  // Leave application needs a verified identity (role/leave credits come
-  // from the masterlist login) - nothing to show without that.
+  // Leave application and the records dashboard both need a verified
+  // identity - nothing to show without that.
   document.getElementById('openLeaveBtn').style.display = REQUIRE_LOGIN && employee ? 'block' : 'none';
+  document.getElementById('openRecordsBtn').style.display = REQUIRE_LOGIN && employee ? 'block' : 'none';
 }
 
 function logout() {
@@ -160,6 +162,11 @@ function logout() {
   employee = null;
   localStorage.removeItem('attendance_token');
   localStorage.removeItem('attendance_employee');
+  // Otherwise the next person to log in on this device would see the
+  // previous employee's cached attendance/leave calendar until reopening it.
+  myRecordsData = null;
+  attendanceDateSet = null;
+  leaveDayMap = null;
   showLogin();
 }
 
@@ -291,6 +298,113 @@ document.getElementById('leaveForm').addEventListener('submit', async function (
     submitBtn.textContent = 'Submit Leave Application';
   }
 });
+
+// ============================================================
+// My Records — a read-only calendar combining this employee's own
+// attendance history and leave history (fetched once via getMyRecords,
+// then browsed month-to-month entirely client-side, no re-fetch per month).
+// ============================================================
+let myRecordsData = null; // { attendanceDates: [...], leaveDays: [...] } - cached after first fetch
+let attendanceDateSet = null; // Set<'yyyy-MM-dd'>
+let leaveDayMap = null; // Map<'yyyy-MM-dd', {status, leaveType}>
+const today = new Date();
+let calendarYear = today.getFullYear();
+let calendarMonth = today.getMonth(); // 0-indexed
+
+function toDateKey(y, m, d) {
+  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function renderCalendar() {
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  document.getElementById('calendarMonthLabel').textContent = `${monthNames[calendarMonth]} ${calendarYear}`;
+
+  const firstWeekday = new Date(calendarYear, calendarMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const todayKey = toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < firstWeekday; i++) {
+    grid.appendChild(Object.assign(document.createElement('div'), { className: 'calendar-day empty' }));
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = toDateKey(calendarYear, calendarMonth, day);
+    const cell = document.createElement('div');
+    cell.className = 'calendar-day';
+    cell.textContent = day;
+
+    if (attendanceDateSet.has(key)) {
+      cell.classList.add('present');
+      cell.title = 'Present';
+    } else if (leaveDayMap.has(key)) {
+      const leave = leaveDayMap.get(key);
+      if (leave.status === 'APPROVED') {
+        cell.classList.add('approved');
+        cell.title = leave.leaveType || 'Approved Leave';
+      } else if (leave.status === 'PENDING') {
+        cell.classList.add('pending');
+        cell.title = `Pending: ${leave.leaveType || 'Leave'}`;
+      } else {
+        cell.classList.add('absent'); // rejected leave = counted as absent
+        cell.title = `Absent (leave request rejected)`;
+      }
+    }
+
+    if (key === todayKey) cell.classList.add('today');
+    grid.appendChild(cell);
+  }
+}
+
+function changeCalendarMonth(delta) {
+  calendarMonth += delta;
+  if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+  else if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+  renderCalendar();
+}
+
+async function openRecordsModal() {
+  document.getElementById('recordsModal').style.display = 'flex';
+  document.getElementById('recordsStatus').style.display = 'none';
+
+  if (!myRecordsData) {
+    const statusDiv = document.getElementById('recordsStatus');
+    statusDiv.className = 'status-message loading';
+    statusDiv.textContent = 'Loading your records...';
+    statusDiv.style.display = 'block';
+
+    try {
+      const result = await apiCall('getMyRecords', { token });
+      if (result.error) throw new Error(result.error);
+      myRecordsData = result;
+      attendanceDateSet = new Set(result.attendanceDates || []);
+      leaveDayMap = new Map((result.leaveDays || []).map(d => [d.date, d]));
+      statusDiv.style.display = 'none';
+      renderCalendar();
+    } catch (err) {
+      statusDiv.className = 'status-message error';
+      statusDiv.textContent = 'Could not load your records: ' + err.message;
+      statusDiv.style.display = 'block';
+    }
+  } else {
+    renderCalendar();
+  }
+}
+
+function closeRecordsModal() {
+  document.getElementById('recordsModal').style.display = 'none';
+}
+
+document.getElementById('openRecordsBtn').addEventListener('click', openRecordsModal);
+document.getElementById('recordsCloseBtn').addEventListener('click', closeRecordsModal);
+document.getElementById('recordsModal').addEventListener('click', (e) => {
+  if (e.target.id === 'recordsModal') closeRecordsModal();
+});
+document.getElementById('calendarPrevBtn').addEventListener('click', () => changeCalendarMonth(-1));
+document.getElementById('calendarNextBtn').addEventListener('click', () => changeCalendarMonth(1));
 
 // ============================================================
 // Location — mandatory for submission in the app (unlike the old form,

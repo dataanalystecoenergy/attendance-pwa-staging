@@ -68,6 +68,7 @@
     </div>
 
     <button type="button" id="openLeaveBtn" class="leave-btn" style="display:none;">📝 Apply for a Leave</button>
+    <button type="button" id="openRecordsBtn" class="leave-btn records-btn" style="display:none;">📅 My Attendance &amp; Leave</button>
 
     <!-- ================= LOGIN SCREEN ================= -->
     <div class="form-container" id="loginScreen" style="display:none;">
@@ -238,6 +239,39 @@
 
             <button type="submit" class="submit-btn" id="submitBtn">Submit Attendance</button>
         </form>
+    </div>
+
+    <!-- ================= MY RECORDS (ATTENDANCE + LEAVE CALENDAR) ================= -->
+    <!-- Read-only against both the Attendance system's Combined Attendances
+         sheet and the Leave Application system's Form Responses 1 - never
+         writes to either. -->
+    <div id="recordsModal" class="leave-overlay" style="display:none;">
+        <div class="leave-overlay-card">
+            <div class="leave-overlay-header">
+                <h2>📅 My Attendance &amp; Leave</h2>
+                <button type="button" id="recordsCloseBtn" class="install-overlay-close">✕</button>
+            </div>
+
+            <div id="recordsStatus" class="status-message"></div>
+
+            <div class="calendar-nav">
+                <button type="button" id="calendarPrevBtn" class="control-btn" style="flex:0 0 auto;">‹</button>
+                <div id="calendarMonthLabel" class="calendar-month-label"></div>
+                <button type="button" id="calendarNextBtn" class="control-btn" style="flex:0 0 auto;">›</button>
+            </div>
+
+            <div class="calendar-legend">
+                <span class="legend-item"><span class="legend-swatch legend-present"></span>Present</span>
+                <span class="legend-item"><span class="legend-swatch legend-approved"></span>Approved Leave</span>
+                <span class="legend-item"><span class="legend-swatch legend-pending"></span>Pending Leave</span>
+                <span class="legend-item"><span class="legend-swatch legend-absent"></span>Absent</span>
+            </div>
+
+            <div class="calendar-weekdays">
+                <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+        </div>
     </div>
 
     <!-- ================= LEAVE APPLICATION MODAL ================= -->
