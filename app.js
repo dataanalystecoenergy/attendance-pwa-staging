@@ -4,12 +4,11 @@
 // ============================================================
 const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbysjczGw2hPim2ah9M82PqoHPSjOiHeZb7GyQtkYH6UKoqiXCKho0nBeFmmaJj6Z5QDbg/exec';
 
-// Login is temporarily switched off - flip back to true to re-enable
-// Employee ID + PIN accounts. While off, the form asks for a free-text
-// name/email instead (same as the original pre-auth app) and submits
-// through the unauthenticated action, so nothing server-side needs to
-// change to turn this back on later.
-const REQUIRE_LOGIN = false;
+// Login (personal email + PIN accounts) is switched back on as of 2026-07-21.
+// Flip to false to fall back to the free-text email field + unauthenticated
+// submission path instead, same as before - nothing server-side needs to
+// change either way.
+const REQUIRE_LOGIN = true;
 
 // ============================================================
 // State
@@ -164,7 +163,7 @@ document.getElementById('logoutBtn').addEventListener('click', logout);
 
 document.getElementById('loginForm').addEventListener('submit', async function (e) {
   e.preventDefault();
-  const employeeId = document.getElementById('loginEmployeeId').value.trim();
+  const email = document.getElementById('loginEmail').value.trim();
   const pin = document.getElementById('loginPin').value.trim();
   const loginBtn = document.getElementById('loginBtn');
   const statusDiv = document.getElementById('loginStatus');
@@ -174,7 +173,7 @@ document.getElementById('loginForm').addEventListener('submit', async function (
   statusDiv.style.display = 'none';
 
   try {
-    const result = await apiCall('login', { employeeId, pin });
+    const result = await apiCall('login', { email, pin });
     if (result.success) {
       token = result.token;
       employee = result.employee;
