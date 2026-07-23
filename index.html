@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 STAGING — Ecoenergy Attendance</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#03346E">
+
+<!-- Starts the TLS handshake to Apps Script before the first API call is even
+     made, shaving that latency off the first login/data-load round trip. -->
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
+
+<!-- iOS: Safari doesn't fully honor manifest.json, needs these explicitly -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="STAGING Attendance">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div style="background:#c0392b;color:white;text-align:center;padding:8px;font-weight:bold;font-size:0.85rem;">
+        🧪 STAGING — test builds only, writes to the real production sheet
+    </div>
+    <div class="logo-container">
+        <img src="eco-logo-transparent.png" alt="EcoEnergy Solar Logo">
+    </div>
+
+    <button type="button" id="installBtn" class="install-btn" style="display:none;">📲 Install App</button>
+
+    <!-- ================= INSTALL GATE ================= -->
+    <!-- Shown first, before login/the attendance form, on every visit that
+         isn't already running as the installed app. Hard gate, deliberately
+         no escape hatch - Install is the only way through. On a
+         browser/device where install isn't supported at all, this blocks
+         attendance submission entirely until that's resolved (known,
+         accepted tradeoff). -->
+    <div class="form-container install-gate" id="installGate" style="display:none;">
+        <h1>📲 Install the App</h1>
+        <p class="install-gate-copy">Add EcoEnergy Attendance to your home screen to continue — faster loading, camera access, and one-tap access every shift.</p>
+        <div id="gateInstallStatus" class="status-message"></div>
+        <button type="button" id="gateInstallBtn" class="submit-btn">Install App</button>
+    </div>
+
+    <!-- iOS has no programmatic install prompt (Apple doesn't support it) -
+         this overlay shows the manual Share -> Add to Home Screen steps instead. -->
+    <div id="iosInstallOverlay" class="install-overlay" style="display:none;">
+        <div class="install-overlay-card">
+            <button type="button" id="iosInstallClose" class="install-overlay-close">✕</button>
+            <h2>Install on iPhone/iPad</h2>
+            <p>iOS requires these steps manually — Apple doesn't allow apps to trigger this automatically:</p>
+            <ol>
+                <li>Make sure you're in <strong>Safari</strong> (this won't work in Chrome on iOS)</li>
+                <li>Tap the <strong>Share</strong> icon <span class="ios-share-icon">⬆️</span> in the bottom toolbar</li>
+                <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                <li>Tap <strong>"Add"</strong> in the top right</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="app-header" id="appHeader" style="display:none;">
+        <span class="who" id="whoAmI"></span>
+        <button type="button" class="logout-btn" id="logoutBtn">Log out</button>
+    </div>
+
+    <!-- ================= LOGIN SCREEN ================= -->
+    <div class="form-container" id="loginScreen" style="display:none;">
+        <h1>Employee Login</h1>
+        <div id="loginStatus" class="status-message"></div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="loginEmployeeId">Employee ID <span class="required">*</span></label>
+                <input type="text" id="loginEmployeeId" name="employeeId" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPin">PIN <span class="required">*</span></label>
+                <input type="password" id="loginPin" name="pin" inputmode="numeric" pattern="[0-9]*"
+                    autocomplete="current-password" maxlength="6" required>
+            </div>
+            <button type="submit" class="submit-btn" id="loginBtn">Log In</button>
+        </form>
+    </div>
+
+    <!-- ================= ATTENDANCE FORM (shown after login) ================= -->
+    <div class="form-container" id="formContainer" style="display:none;">
+        <div id="statusMessage" class="status-message"></div>
+        <form id="attendanceForm">
+            <!-- Only shown while login is switched off (REQUIRE_LOGIN = false in app.js) -->
+            <div id="submitterEmailGroup" style="display:none;">
+                <div class="section-label"><span class="section-icon">🔑</span>Your Info</div>
+                <div class="form-group">
+                    <label for="submitterEmail">Email Address <span class="required">*</span></label>
+                    <input type="email" id="submitterEmail" name="submitterEmail">
+                </div>
+            </div>
+
+            <div class="section-label"><span class="section-icon">🗓️</span>Shift Details</div>
+
+            <div class="form-group">
+                <label for="deploymentDate">Deployment Date <span class="required">*</span></label>
+                <input type="date" id="deploymentDate" name="deploymentDate" required>
+            </div>
+
+            <div class="form-group">
+                <label for="siteName">Site Name <span class="required">*</span></label>
+                <div class="select-all-controls" style="margin-bottom: 8px;">
+                    <input type="text" id="siteSearch" class="search-input" placeholder="Search site...">
+                    <button type="button" id="clearSiteSearch" class="control-btn" style="flex: 0 0 auto; min-width: 60px;">Clear</button>
+                </div>
+                <select id="siteName" name="siteName" required size="5" style="height: auto; max-height: 180px; overflow-y: auto;">
+                    <option value="">-- Select Site --</option>
+                    <option value="Office">Office</option>
+                    <option value="Pagbilao">Pagbilao</option>
+                    <option value="Metaplas">Metaplas</option>
+                    <option value="AAV Residential">AAV Residential</option>
+                    <option value="TDK">TDK</option>
+                    <option value="QC Styro Sta Clara P2">QC Styro Sta Clara P2</option>
+                    <option value="QC Styro Guyong P2">QC Styro Guyong P2</option>
+                    <option value="Multiplast B1&2">Multiplast B1&2</option>
+                    <option value="Customer Service">Customer Service</option>
+                    <option value="Platinum Gilmore">Platinum Gilmore</option>
+                    <option value="UP Econ">UP Econ</option>
+                    <option value="M Catering">M Catering</option>
+                    <option value="Tristellar">Tristellar</option>
+                    <option value="Naga Terminal">Naga Terminal</option>
+                    <option value="Naga City Hall">Naga City Hall</option>
+                    <option value="BBF 2">BBF 2</option>
+                    <option value="BBF 3">BBF 3</option>
+                    <option value="Ionics 2">Ionics 2</option>
+                    <option value="Ionics 5&6">Ionics 5&6</option>
+                    <option value="Macro">Macro</option>
+                    <option value="Marcel">Marcel</option>
+                    <option value="Mega">Mega</option>
+                    <option value="RBL Cold Storage">RBL Cold Storage</option>
+                    <option value="168 PLASTIC">168 PLASTIC</option>
+                    <option value="Profood">Profood</option>
+                    <option value="J. BASA">J. BASA</option>
+                    <option value="RS - Gen. Noli Hybrid">RS - Gen. Noli Hybrid</option>
+                    <option value="RS - Mr. Art Hybrid">RS - Mr. Art Hybrid</option>
+                    <option value="Waltermart Dasma">Waltermart Dasma</option>
+                    <option value="Waltermart Bel Air">Waltermart Bel Air</option>
+                    <option value="Waltermart Trece">Waltermart Trece</option>
+                    <option value="168 Plastic Additional">168 Plastic Additional</option>
+                    <option value="168 Tube Ice">168 Tube Ice</option>
+                    <option value="Lipa Medix">Lipa Medix</option>
+                    <option value="QC Styro Sta Clara">QC Styro Sta Clara</option>
+                    <option value="QC Styro Guyong">QC Styro Guyong</option>
+                    <option value="Multiplast">Multiplast</option>
+                    <option value="Multiplast 2">Multiplast 2</option>
+                    <option value="Multiplast B7">Multiplast B7</option>
+                    <option value="Aclem">Aclem</option>
+                    <option value="Basic Packaging">Basic Packaging</option>
+                    <option value="New Star Apa">New Star Apa</option>
+                    <option value="Chino">Chino</option>
+                    <option value="Droid">Droid</option>
+                    <option value="Mac Si">Mac Si</option>
+                    <option value="Valiente">Valiente</option>
+                    <option value="Essilor">Essilor</option>
+                    <option value="Llave">Llave</option>
+                </select>
+                <div id="siteError" class="error-message" style="display: none;">Please select a site.</div>
+            </div>
+
+            <div class="section-label"><span class="section-icon">👥</span>Team</div>
+
+            <div class="form-group">
+                <label>Agency <span class="required">*</span></label>
+                <div class="purpose-toggle" id="agencyToggle" style="flex-wrap: wrap; gap: 8px;">
+                    <button type="button" class="purpose-btn agency-btn" data-value="EcoEnergy">EcoEnergy</button>
+                    <button type="button" class="purpose-btn agency-btn" data-value="Royal Power">Royal Power</button>
+                    <button type="button" class="purpose-btn agency-btn" data-value="Stellar">Stellar</button>
+                    <button type="button" class="purpose-btn agency-btn" data-value="PUP">PUP</button>
+                </div>
+                <input type="hidden" id="agency" name="agency" required>
+                <div id="agencyError" class="error-message" style="display: none;">Please select an agency.</div>
+            </div>
+
+            <div class="form-group">
+                <label>Names <span class="required">*</span></label>
+                <p id="gpsScopeNote" style="font-size:0.8rem;color:#777;margin:-8px 0 10px;"></p>
+                <div class="select-all-controls">
+                  <input type="text" id="nameSearch" class="search-input" placeholder="Search names...">
+                  <button type="button" id="clearAllNames" class="control-btn">Clear All</button>
+                </div>
+                <div id="loadingNames" class="loading" style="display: block; padding: 20px; text-align: center;">
+                    <div class="spinner"></div>Loading employees...
+                </div>
+                <div class="checkbox-group" id="nameCheckboxes" style="display: none;"></div>
+                <div id="nameError" class="error-message" style="display: none;">Please select at least one name.</div>
+                <div id="noResults" class="no-results" style="display: none;">No names match your search.</div>
+            </div>
+
+            <div class="section-label"><span class="section-icon">✍️</span>Entry Details</div>
+
+            <div class="form-group">
+                <label>Purpose of Entry <span class="required">*</span></label>
+                <div class="purpose-toggle">
+                    <button type="button" class="purpose-btn" data-value="Time In">Time In</button>
+                    <button type="button" class="purpose-btn" data-value="Time Out">Time Out</button>
+                </div>
+                <input type="hidden" id="purpose" name="purpose" required>
+                <div id="purposeError" class="error-message" style="display: none;">Please select a purpose.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="remarks">Remarks</label>
+                <textarea id="remarks" name="remarks" placeholder="Remarks here..."></textarea>
+            </div>
+
+            <div class="section-label"><span class="section-icon">📷</span>Proof of Attendance</div>
+
+            <div class="form-group">
+                <label>Attendance Photo <span class="required">*</span></label>
+                <button type="button" id="openCameraBtn" class="camera-btn">📷 Take Photo</button>
+                <!-- Fallback only if the in-app camera can't be used (no getUserMedia support,
+                     permission denied, etc.) - capture="user" still nudges the phone's own
+                     camera app to open on the front camera instead of the gallery, matching
+                     the in-app default, though it's a hint the OS can ignore, not a guarantee. -->
+                <input type="file" id="attendanceImageFallback" accept="image/*" capture="user" class="file-input" style="display:none;">
+                <div id="photoPreviewWrap" style="display:none; margin-top: 10px;">
+                    <img id="photoPreview" style="width:100%; border-radius:6px; border:1px solid #ddd;">
+                    <button type="button" id="retakePhotoBtn" class="control-btn" style="margin-top:8px; width:100%;">Retake Photo</button>
+                </div>
+                <div id="photoError" class="error-message" style="display: none;">Please take a photo.</div>
+                <small style="color: #666;">Timestamp is burned into the photo automatically, synced to the server clock.</small>
+            </div>
+
+            <!-- Location is mandatory in the app — no silent skip like the old form -->
+            <div id="locationNotice" class="location-notice">
+                ⚠ Location access is required to submit. Please allow location and try again.
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">Submit Attendance</button>
+        </form>
+    </div>
+
+    <!-- ================= CAMERA MODAL ================= -->
+    <div id="cameraModal" class="camera-modal" style="display:none;">
+        <div class="camera-modal-inner">
+            <video id="cameraVideo" autoplay playsinline muted></video>
+            <div id="cameraClockOverlay" class="camera-clock-overlay"></div>
+            <div id="cameraError" class="camera-error" style="display:none;"></div>
+
+            <canvas id="captureCanvas" style="display:none;"></canvas>
+
+            <div class="camera-controls">
+                <button type="button" id="cameraCancelBtn" class="camera-cancel-btn">Cancel</button>
+                <button type="button" id="cameraShutterBtn" class="camera-shutter-btn" aria-label="Capture photo"></button>
+                <button type="button" id="cameraFlipBtn" class="camera-flip-btn" aria-label="Switch camera" style="display:none;">🔄</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
