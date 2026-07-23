@@ -137,6 +137,7 @@ function showLogin() {
   document.getElementById('loginScreen').style.display = 'block';
   document.getElementById('formContainer').style.display = 'none';
   document.getElementById('appHeader').style.display = 'none';
+  document.getElementById('openLeaveBtn').style.display = 'none';
 }
 
 function showForm() {
@@ -149,6 +150,9 @@ function showForm() {
   document.getElementById('gpsScopeNote').textContent = REQUIRE_LOGIN
     ? 'GPS is verified for you (the logged-in submitter) only — not individually for every name checked below.'
     : 'GPS is captured with this submission but not tied to a verified account while login is switched off — not individually for every name checked below.';
+  // Leave application needs a verified identity (role/leave credits come
+  // from the masterlist login) - nothing to show without that.
+  document.getElementById('openLeaveBtn').style.display = REQUIRE_LOGIN && employee ? 'block' : 'none';
 }
 
 function logout() {
@@ -194,6 +198,97 @@ document.getElementById('loginForm').addEventListener('submit', async function (
   } finally {
     loginBtn.disabled = false;
     loginBtn.textContent = 'Log In';
+  }
+});
+
+// ============================================================
+// Leave Application — submits into the existing, separate Leave
+// Application system's own spreadsheet via a new API action; that
+// system's own approval workflow/tracking page/deployment are untouched.
+// Name/Position/Agency/Remaining Leave come straight from the verified
+// login session, not re-entered.
+// ============================================================
+function isInstallerPosition(position) {
+  const p = (position || '').toString().trim().toLowerCase();
+  return p === 'installer' || p.includes('electrician');
+}
+
+function openLeaveModal() {
+  document.getElementById('leaveName').value = employee.fullName || '';
+  document.getElementById('leavePosition').value = employee.role || '';
+  document.getElementById('leaveAgency').value = employee.agency || '';
+  document.getElementById('leaveCredits').value = employee.leaveCredits ?? '';
+
+  const isInstaller = isInstallerPosition(employee.role);
+  document.getElementById('leaveProjectGroup').style.display = isInstaller ? 'block' : 'none';
+  document.getElementById('leaveEngineerGroup').style.display = isInstaller ? 'block' : 'none';
+  document.getElementById('leaveProject').required = isInstaller;
+  document.getElementById('leaveEngineer').required = isInstaller;
+
+  document.getElementById('leaveStatus').style.display = 'none';
+  document.getElementById('leaveModal').style.display = 'flex';
+}
+
+function closeLeaveModal() {
+  document.getElementById('leaveModal').style.display = 'none';
+}
+
+document.getElementById('openLeaveBtn').addEventListener('click', openLeaveModal);
+document.getElementById('leaveCloseBtn').addEventListener('click', closeLeaveModal);
+document.getElementById('leaveModal').addEventListener('click', (e) => {
+  if (e.target.id === 'leaveModal') closeLeaveModal(); // click on the dim backdrop
+});
+
+document.getElementById('leaveForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  const startDate = document.getElementById('leaveStartDate').value;
+  const endDate = document.getElementById('leaveEndDate').value;
+  if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+    const statusDiv = document.getElementById('leaveStatus');
+    statusDiv.className = 'status-message error';
+    statusDiv.textContent = 'Start date cannot be after end date.';
+    statusDiv.style.display = 'block';
+    return;
+  }
+
+  const submitBtn = document.getElementById('leaveSubmitBtn');
+  const statusDiv = document.getElementById('leaveStatus');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+  statusDiv.style.display = 'none';
+
+  const data = {
+    leaveType: document.getElementById('leaveType').value,
+    startDate,
+    endDate,
+    reason: document.getElementById('leaveReason').value,
+    projectName: document.getElementById('leaveProject').value,
+    engineerInCharge: document.getElementById('leaveEngineer').value,
+  };
+
+  try {
+    const result = await apiCall('submitLeaveApplication', { token, data });
+    if (result.success) {
+      statusDiv.className = 'status-message success';
+      statusDiv.textContent = result.message || 'Leave application submitted successfully!';
+      statusDiv.style.display = 'block';
+      document.getElementById('leaveForm').reset();
+      document.getElementById('leaveProjectGroup').style.display = 'none';
+      document.getElementById('leaveEngineerGroup').style.display = 'none';
+      setTimeout(closeLeaveModal, 2000);
+    } else {
+      statusDiv.className = 'status-message error';
+      statusDiv.textContent = result.error || 'Submission failed.';
+      statusDiv.style.display = 'block';
+    }
+  } catch (err) {
+    statusDiv.className = 'status-message error';
+    statusDiv.textContent = 'Could not reach the server: ' + err.message;
+    statusDiv.style.display = 'block';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Leave Application';
   }
 });
 

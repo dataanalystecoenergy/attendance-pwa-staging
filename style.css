@@ -370,6 +370,57 @@ button, input, textarea, select {
     cursor: pointer;
 }
 
+.leave-btn {
+    display: block;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto 12px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: white;
+    border: none;
+    padding: 13px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(232,134,11,0.35);
+}
+
+.leave-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 1500;
+}
+
+.leave-overlay-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 20px;
+    max-width: 460px;
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.leave-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.leave-overlay-header h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--heading-color);
+}
+
 .form-container {
     margin-top: 15px;
     background: var(--card-bg);

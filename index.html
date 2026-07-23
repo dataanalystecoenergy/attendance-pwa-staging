@@ -67,6 +67,8 @@
         <button type="button" class="logout-btn" id="logoutBtn">Log out</button>
     </div>
 
+    <button type="button" id="openLeaveBtn" class="leave-btn" style="display:none;">📝 Apply for a Leave</button>
+
     <!-- ================= LOGIN SCREEN ================= -->
     <div class="form-container" id="loginScreen" style="display:none;">
         <h1>Employee Login</h1>
@@ -236,6 +238,123 @@
 
             <button type="submit" class="submit-btn" id="submitBtn">Submit Attendance</button>
         </form>
+    </div>
+
+    <!-- ================= LEAVE APPLICATION MODAL ================= -->
+    <!-- Submits into the existing, separate Leave Application system's own
+         spreadsheet (via a new API action that appends a row the same way
+         its own submitLeaveApplication() already does) - that system's own
+         approval workflow, tracking page, and deployment are untouched. -->
+    <div id="leaveModal" class="leave-overlay" style="display:none;">
+        <div class="leave-overlay-card">
+            <div class="leave-overlay-header">
+                <h2>📝 Apply for a Leave</h2>
+                <button type="button" id="leaveCloseBtn" class="install-overlay-close">✕</button>
+            </div>
+
+            <div id="leaveStatus" class="status-message"></div>
+
+            <form id="leaveForm">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="leaveName" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Position</label>
+                    <input type="text" id="leavePosition" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Agency</label>
+                    <input type="text" id="leaveAgency" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Remaining Leave Credits</label>
+                    <input type="text" id="leaveCredits" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="leaveType">Type of Leave <span class="required">*</span></label>
+                    <select id="leaveType" required>
+                        <option value="">Please select leave type</option>
+                        <option value="Annual Leave">Annual Leave</option>
+                        <option value="Funeral Leave">Funeral Leave</option>
+                        <option value="Maternity Leave">Maternity Leave</option>
+                        <option value="Sick Leave">Sick Leave</option>
+                        <option value="Half Day">Half Day</option>
+                        <option value="Vacation Leave">Vacation Leave</option>
+                        <option value="Paternity Leave">Paternity Leave</option>
+                        <option value="Emergency Leave">Emergency Leave</option>
+                        <option value="Leave Without Pay">Leave Without Pay</option>
+                        <option value="Leave With Pay">Leave With Pay</option>
+                        <option value="Work From Home">Work From Home</option>
+                        <option value="Official Business">Official Business</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="leaveProjectGroup" style="display:none;">
+                    <label for="leaveProject">Project Name <span class="required">*</span></label>
+                    <select id="leaveProject">
+                        <option value="">Please select project</option>
+                        <option>168 Plastic</option><option>Aclemm</option><option>Basic Packaging</option>
+                        <option>BBF 2</option><option>BBF 3</option><option>Customer Service</option>
+                        <option>Calatagan</option><option>Profood</option><option>Official Business</option>
+                        <option>Office</option><option>QC Styro Guyong</option><option>Ionics 2</option>
+                        <option>J. Basa</option><option>Joel Co</option><option>Kaingin</option>
+                        <option>Lipa Medix</option><option>M&amp;M</option><option>Marcel</option>
+                        <option>Multiplast</option><option>Mega</option><option>RBL Cold Storage</option>
+                        <option>QC Styro Edsa</option><option>Seattle</option><option>QC Styro Sta Clara</option>
+                        <option>Waltermart Dasma</option><option>WFH</option><option>Macro</option>
+                        <option>Site Visit</option><option>Marikina</option><option>Offset</option>
+                        <option>Not Found</option><option>168 Ice Plant</option><option>Chino</option>
+                        <option>Llave</option><option>Antipolo</option><option>Mac Si</option>
+                        <option>Sunglobe</option><option>Specmaster</option><option>Easy Home Hardware</option>
+                        <option>Excell</option><option>Essilor</option><option>Ginkit</option>
+                        <option>Calmeray</option><option>Canlubang</option><option>Pasig</option>
+                        <option>Laguna</option><option>Cristobal</option><option>Platinum EE Room</option>
+                        <option>SMX</option><option>Deye PH</option><option>Ellison</option>
+                        <option>Diane</option><option>Summit best</option><option>Ace Sprinter</option>
+                        <option>NAIA Terminal</option><option>Sta Maria</option><option>Rizal</option>
+                        <option>Valiente</option><option>Bel Air</option><option>168 Plastic Additional</option>
+                        <option>Trece</option><option>Jaro</option><option>Droid</option>
+                        <option>Leo Sioco</option><option>TDK</option><option>Pagbilao</option>
+                        <option>Multiplast B1&amp;2</option><option>Multiplast B7</option>
+                        <option>QC Styro Guyong P2</option><option>QC Styro Sta Clara P2</option>
+                        <option>Ionics 5/6</option><option>Tristellar</option><option>UP Econ</option>
+                        <option>M Catering</option><option>Platinum Gilmore</option><option>AAV Residential</option>
+                        <option>Metaplas</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="leaveEngineerGroup" style="display:none;">
+                    <label for="leaveEngineer">Engineer In Charge <span class="required">*</span></label>
+                    <select id="leaveEngineer">
+                        <option value="">Please select engineer</option>
+                        <option>Engr. Jemer</option><option>Engr. Jasper</option><option>Engr. Jherson</option>
+                        <option>Engr. Edito</option><option>Engr. Tin</option><option>Engr. Steven Paul</option>
+                        <option>Engr. Anthony</option><option>Engr. Joel</option><option>Engr. Rafael</option>
+                        <option>Engr. Abe</option><option>Engr. Honey</option>
+                    </select>
+                </div>
+
+                <div class="date-container" style="display:flex; gap:12px;">
+                    <div class="form-group" style="flex:1;">
+                        <label for="leaveStartDate">Start Date <span class="required">*</span></label>
+                        <input type="date" id="leaveStartDate" required>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label for="leaveEndDate">End Date <span class="required">*</span></label>
+                        <input type="date" id="leaveEndDate" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="leaveReason">Reason <span class="required">*</span></label>
+                    <textarea id="leaveReason" placeholder="Please provide the reason for your leave" required></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn" id="leaveSubmitBtn">Submit Leave Application</button>
+            </form>
+        </div>
     </div>
 
     <!-- ================= CAMERA MODAL ================= -->
