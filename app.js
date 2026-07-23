@@ -215,10 +215,10 @@ function isInstallerPosition(position) {
 
 function openLeaveModal() {
   document.getElementById('leaveName').value = employee.fullName || '';
-  document.getElementById('leavePosition').value = employee.role || '';
   document.getElementById('leaveAgency').value = employee.agency || '';
-  document.getElementById('leaveCredits').value = employee.leaveCredits ?? '';
 
+  // Position isn't shown - the installer-only fields below are still
+  // driven automatically from employee.role, just never displayed as a field.
   const isInstaller = isInstallerPosition(employee.role);
   document.getElementById('leaveProjectGroup').style.display = isInstaller ? 'block' : 'none';
   document.getElementById('leaveEngineerGroup').style.display = isInstaller ? 'block' : 'none';
