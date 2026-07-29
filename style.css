@@ -576,10 +576,18 @@ input[inputmode="numeric"], select, textarea {
 /* Some mobile browsers give the native date-picker's internal calendar-icon
    widget an intrinsic width that ignores width:100%/border-box, pushing
    the field wider than every other input on the form. min-width:0 lets it
-   actually shrink to fit its box; max-width:100% is a hard backstop. */
+   actually shrink to fit its box; max-width:100% is a hard backstop.
+   iOS Safari specifically renders its own native "wheel" chrome around the
+   value (centered text, its own border/background) that ignores the
+   width/border/background rules above entirely, which is what actually
+   pokes past the card's edge - -webkit-appearance:none strips that native
+   chrome so it renders as a plain box like every other input, left-aligned
+   and sized the same way. Tapping it still opens the native iOS date wheel. */
 input[type="date"] {
     min-width: 0;
     max-width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 input[type="text"]:focus, input[type="email"]:focus, input[type="date"]:focus,
