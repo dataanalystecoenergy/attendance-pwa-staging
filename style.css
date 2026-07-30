@@ -975,6 +975,7 @@ textarea {
     color: var(--ink);
     font-size: 0.92rem;
     margin-bottom: 3px;
+    text-align: center;
 }
 
 .announcement-date {
@@ -987,6 +988,7 @@ textarea {
     font-size: 0.85rem;
     color: var(--label-text);
     white-space: pre-wrap;
+    text-align: center;
 }
 
 .back-to-home-btn {
