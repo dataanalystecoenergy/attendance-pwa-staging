@@ -886,8 +886,9 @@ textarea {
 .home-topbar {
     display: flex;
     align-items: center;
+    gap: 8px;
     max-width: 500px;
-    margin: 0 auto 12px;
+    margin: 0 auto 16px;
     color: white;
 }
 
@@ -903,57 +904,90 @@ textarea {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .home-topbar-title {
     flex: 1;
-    text-align: center;
+    text-align: left;
     font-weight: 700;
     font-size: 1.05rem;
 }
 
-.home-topbar-spacer {
-    width: 42px;
+.home-topbar-action {
+    background: var(--gold);
+    border: none;
+    color: var(--navy-deep);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 10px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    flex-shrink: 0;
+}
+
+.home-topbar-action:active {
+    transform: scale(0.96);
 }
 
 .home-greeting-card {
     text-align: center;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    border: none;
+    box-shadow: 0 12px 28px rgba(3,52,110,0.35), 0 2px 8px rgba(0,0,0,0.1);
+    padding: 24px 18px 20px;
+}
+
+.home-avatar {
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.16);
+    border: 2px solid rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: white;
+    letter-spacing: 0.5px;
 }
 
 .home-greeting-name {
     font-size: 1.3rem;
     font-weight: 800;
-    color: var(--heading-color);
+    color: white;
 }
 
 .home-greeting-date {
-    color: var(--muted);
+    color: rgba(255,255,255,0.75);
     font-size: 0.85rem;
-    margin: 4px 0 14px;
+    margin: 4px 0 16px;
 }
 
 .home-time-status {
-    background: var(--panel-bg);
-    border: 1px solid var(--panel-border);
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 0.95rem;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
     font-weight: 600;
-    color: var(--ink);
+    color: white;
+    display: inline-block;
 }
 
-.home-time-status.timed-in { color: #2e9e5b; }
-.home-time-status.timed-out { color: var(--navy-light); }
-.home-time-status.not-yet { color: var(--gold-dark); }
-
-.home-timeinout-btn {
-    max-width: 500px;
-}
+.home-time-status.timed-in { background: rgba(46,158,91,0.28); border-color: rgba(46,158,91,0.55); color: #d7ffe6; }
+.home-time-status.timed-out { background: rgba(16,73,155,0.35); border-color: rgba(255,255,255,0.35); color: #dce8ff; }
+.home-time-status.not-yet { background: rgba(245,166,35,0.22); border-color: rgba(245,166,35,0.5); color: #ffe6bd; }
 
 .home-section-title {
     font-size: 0.95rem;
     color: var(--heading-color);
     margin: 0 0 12px;
+    font-weight: 800;
 }
 
 .announcements-list {
@@ -965,23 +999,31 @@ textarea {
 .announcement-card {
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
-    border-left: 4px solid var(--gold);
-    border-radius: 8px;
-    padding: 12px;
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .announcement-title {
-    font-weight: 700;
-    color: var(--ink);
-    font-size: 0.92rem;
-    margin-bottom: 3px;
+    font-weight: 800;
+    color: var(--heading-color);
+    font-size: 1rem;
+    margin-bottom: 6px;
     text-align: center;
 }
 
 .announcement-date {
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-bottom: 6px;
+    display: block;
+    width: fit-content;
+    margin: 0 auto 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--gold-dark);
+    background: var(--notice-bg);
+    border: 1px solid var(--notice-border);
+    border-radius: 12px;
+    padding: 3px 12px;
+    text-align: center;
 }
 
 .announcement-message {

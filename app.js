@@ -150,11 +150,15 @@ function showHome() {
   document.getElementById('homeScreen').style.display = 'block';
   document.getElementById('drawerName').textContent = employee ? employee.fullName : '';
 
-  const firstName = employee && employee.fullName ? employee.fullName.split(',').pop().trim().split(' ')[0] : '';
+  const nameParts = employee && employee.fullName ? employee.fullName.split(',') : [];
+  const lastName = nameParts[0] ? nameParts[0].trim() : '';
+  const firstName = nameParts[1] ? nameParts[1].trim().split(' ')[0] : '';
   document.getElementById('homeGreetingName').textContent = firstName ? `Hi, ${firstName}` : 'Hi';
   document.getElementById('homeGreetingDate').textContent = new Date().toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
+  document.getElementById('homeAvatar').textContent =
+    ((firstName[0] || '') + (lastName[0] || '')).toUpperCase() || '🙂';
 
   loadTodayStatus();
   loadAnnouncements();
@@ -326,7 +330,7 @@ async function loadTodayStatus() {
     const entries = result.entries || [];
     if (!entries.length) {
       el.className = 'home-time-status not-yet';
-      el.textContent = "You haven't timed in today yet.";
+      el.textContent = "⏳ You haven't timed in today yet.";
       return;
     }
 
@@ -339,13 +343,13 @@ async function loadTodayStatus() {
 
     if (timeOut) {
       el.className = 'home-time-status timed-out';
-      el.textContent = `Timed out at ${formatTime(timeOut.timestamp)} (in at ${timeIn ? formatTime(timeIn.timestamp) : '?'})`;
+      el.textContent = `🔵 Timed out at ${formatTime(timeOut.timestamp)} (in at ${timeIn ? formatTime(timeIn.timestamp) : '?'})`;
     } else if (timeIn) {
       el.className = 'home-time-status timed-in';
-      el.textContent = `Timed in at ${formatTime(timeIn.timestamp)}`;
+      el.textContent = `🟢 Timed in at ${formatTime(timeIn.timestamp)}`;
     } else {
       el.className = 'home-time-status not-yet';
-      el.textContent = "You haven't timed in today yet.";
+      el.textContent = "⏳ You haven't timed in today yet.";
     }
   } catch (err) {
     el.className = 'home-time-status';
