@@ -165,8 +165,7 @@ function logout() {
   // Otherwise the next person to log in on this device would see the
   // previous employee's cached attendance/leave calendar until reopening it.
   myRecordsData = null;
-  attendanceDateSet = null;
-  leaveDayMap = null;
+  dayRecordMap = null;
   showLogin();
 }
 
@@ -300,13 +299,14 @@ document.getElementById('leaveForm').addEventListener('submit', async function (
 });
 
 // ============================================================
-// My Records — a read-only calendar combining this employee's own
-// attendance history and leave history (fetched once via getMyRecords,
-// then browsed month-to-month entirely client-side, no re-fetch per month).
+// My Records — a read-only calendar sourced from the "Attendance Tracking
+// 2026" sheet, HR's own authoritative per-employee-per-day record (one row
+// per day, with Status already computed as Present/Absent/Leave/Rest/etc.)
+// - fetched once via getMyRecords, then browsed month-to-month entirely
+// client-side, no re-fetch per month.
 // ============================================================
-let myRecordsData = null; // { attendanceDates: [...], leaveDays: [...] } - cached after first fetch
-let attendanceDateSet = null; // Set<'yyyy-MM-dd'>
-let leaveDayMap = null; // Map<'yyyy-MM-dd', {status, leaveType}>
+let myRecordsData = null; // { days: [{date, status, timeIn, timeOut}, ...] } - cached after first fetch
+let dayRecordMap = null; // Map<'yyyy-MM-dd', {status, timeIn, timeOut}>
 const today = new Date();
 let calendarYear = today.getFullYear();
 let calendarMonth = today.getMonth(); // 0-indexed
@@ -337,21 +337,24 @@ function renderCalendar() {
     cell.className = 'calendar-day';
     cell.textContent = day;
 
-    if (attendanceDateSet.has(key)) {
-      cell.classList.add('present');
-      cell.title = 'Present';
-    } else if (leaveDayMap.has(key)) {
-      const leave = leaveDayMap.get(key);
-      if (leave.status === 'APPROVED') {
-        cell.classList.add('approved');
-        cell.title = leave.leaveType || 'Approved Leave';
-      } else if (leave.status === 'PENDING') {
-        cell.classList.add('pending');
-        cell.title = `Pending: ${leave.leaveType || 'Leave'}`;
-      } else {
-        cell.classList.add('absent'); // rejected leave = counted as absent
-        cell.title = `Absent (leave request rejected)`;
+    const record = dayRecordMap.get(key);
+    if (record) {
+      const status = (record.status || '').toLowerCase();
+      if (status === 'present') {
+        cell.classList.add('present');
+        cell.title = record.timeIn ? `Present (${record.timeIn} - ${record.timeOut || '...'})` : 'Present';
+      } else if (status === 'leave') {
+        cell.classList.add('leave');
+        cell.title = 'On Leave';
+      } else if (status === 'absent') {
+        cell.classList.add('absent');
+        cell.title = 'Absent';
+      } else if (status === 'rest') {
+        cell.classList.add('rest');
+        cell.title = 'Rest Day';
       }
+      // "Resign" / "Resign this month" and anything else - left unmarked,
+      // not directly actionable for the employee viewing their own calendar.
     }
 
     if (key === todayKey) cell.classList.add('today');
@@ -380,8 +383,7 @@ async function openRecordsModal() {
       const result = await apiCall('getMyRecords', { token });
       if (result.error) throw new Error(result.error);
       myRecordsData = result;
-      attendanceDateSet = new Set(result.attendanceDates || []);
-      leaveDayMap = new Map((result.leaveDays || []).map(d => [d.date, d]));
+      dayRecordMap = new Map((result.days || []).map(d => [d.date, d]));
       statusDiv.style.display = 'none';
       renderCalendar();
     } catch (err) {

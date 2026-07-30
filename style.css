@@ -463,8 +463,8 @@ button, input, textarea, select {
 }
 
 .legend-present { background: #2e9e5b; }
-.legend-approved { background: var(--navy-light); }
-.legend-pending { background: #d9a022; }
+.legend-leave { background: var(--navy-light); }
+.legend-rest { background: #6b7a8d; }
 .legend-absent { background: #d24444; }
 
 .calendar-weekdays {
@@ -500,8 +500,8 @@ button, input, textarea, select {
 }
 
 .calendar-day.present { background: #2e9e5b; color: white; font-weight: 700; }
-.calendar-day.approved { background: var(--navy-light); color: white; font-weight: 700; }
-.calendar-day.pending { background: #d9a022; color: white; font-weight: 700; }
+.calendar-day.leave { background: var(--navy-light); color: white; font-weight: 700; }
+.calendar-day.rest { background: #6b7a8d; color: white; font-weight: 700; }
 .calendar-day.absent { background: #d24444; color: white; font-weight: 700; }
 
 .calendar-day.today {
