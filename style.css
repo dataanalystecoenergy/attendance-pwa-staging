@@ -18,6 +18,8 @@
     --panel-border: #dddddd;
     --overlay-card-bg: #ffffff;
 
+    --accent-blue: #2f6fed;
+
     --success-bg: #e5f6ea;
     --success-text: #1e7a37;
     --success-border: #c3e6cb;
@@ -66,6 +68,8 @@
         --notice-bg: #3a2f12;
         --notice-text: #f0cd7a;
         --notice-border: #6b5419;
+
+        --accent-blue: #5b8def;
     }
 }
 
@@ -917,16 +921,16 @@ textarea {
 }
 
 .home-topbar-action {
-    background: var(--gold);
+    background: var(--accent-blue);
     border: none;
-    color: var(--navy-deep);
+    color: white;
     font-size: 0.78rem;
     font-weight: 700;
     padding: 10px 14px;
     border-radius: 20px;
     cursor: pointer;
     white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 10px rgba(47,111,237,0.4);
     flex-shrink: 0;
     -webkit-appearance: none;
     appearance: none;
@@ -938,19 +942,15 @@ textarea {
 
 .home-greeting-card {
     text-align: center;
-    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
-    border: none;
-    box-shadow: 0 12px 28px rgba(3,52,110,0.35), 0 2px 8px rgba(0,0,0,0.1);
-    padding: 24px 18px 20px;
 }
 
 .home-avatar {
-    width: 54px;
-    height: 54px;
+    width: 56px;
+    height: 56px;
     margin: 0 auto 12px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.16);
-    border: 2px solid rgba(255,255,255,0.5);
+    background: var(--accent-blue);
+    border: 3px solid var(--loading-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -958,38 +958,39 @@ textarea {
     font-size: 1.15rem;
     color: white;
     letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(47,111,237,0.35);
 }
 
 .home-greeting-name {
     font-size: 1.3rem;
     font-weight: 800;
-    color: white;
+    color: var(--heading-color);
 }
 
 .home-greeting-date {
-    color: rgba(255,255,255,0.75);
+    color: var(--muted);
     font-size: 0.85rem;
     margin: 4px 0 16px;
 }
 
 .home-time-status {
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.28);
+    background: var(--loading-bg);
+    border: 1px solid var(--loading-border);
     border-radius: 20px;
     padding: 10px 16px;
     font-size: 0.9rem;
     font-weight: 600;
-    color: white;
+    color: var(--loading-text);
     display: inline-block;
 }
 
-.home-time-status.timed-in { background: rgba(46,158,91,0.28); border-color: rgba(46,158,91,0.55); color: #d7ffe6; }
-.home-time-status.timed-out { background: rgba(16,73,155,0.35); border-color: rgba(255,255,255,0.35); color: #dce8ff; }
-.home-time-status.not-yet { background: rgba(245,166,35,0.22); border-color: rgba(245,166,35,0.5); color: #ffe6bd; }
+.home-time-status.timed-in { background: var(--success-bg); border-color: var(--success-border); color: var(--success-text); }
+.home-time-status.timed-out { background: var(--loading-bg); border-color: var(--loading-border); color: var(--loading-text); }
+.home-time-status.not-yet { background: var(--notice-bg); border-color: var(--notice-border); color: var(--notice-text); }
 
 .home-section-title {
-    font-size: 0.95rem;
-    color: var(--heading-color);
+    font-size: 1rem;
+    color: var(--accent-blue);
     margin: 0 0 12px;
     font-weight: 800;
 }
@@ -1010,7 +1011,7 @@ textarea {
 
 .announcement-title {
     font-weight: 800;
-    color: var(--heading-color);
+    color: var(--accent-blue);
     font-size: 1rem;
     margin-bottom: 6px;
     text-align: center;
@@ -1022,9 +1023,9 @@ textarea {
     margin: 0 auto 10px;
     font-size: 0.8rem;
     font-weight: 700;
-    color: var(--gold-dark);
-    background: var(--notice-bg);
-    border: 1px solid var(--notice-border);
+    color: var(--loading-text);
+    background: var(--loading-bg);
+    border: 1px solid var(--loading-border);
     border-radius: 12px;
     padding: 3px 12px;
     text-align: center;
