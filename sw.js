@@ -2,7 +2,7 @@
 // (it's writing to a live spreadsheet) so POST requests and cross-origin
 // calls to the Apps Script API are never intercepted here — only this
 // site's own static files get cached, for instant repeat loads.
-const CACHE_NAME = 'attendance-staging-shell-v1';
+const CACHE_NAME = 'attendance-staging-shell-v2';
 const SHELL_FILES = [
   './',
   './index.html',
@@ -46,8 +46,13 @@ self.addEventListener('fetch', (event) => {
   // API URL baked into the cached copy). Falling back to cache only when
   // the network is unavailable still gets offline load working, without
   // ever preferring stale code over fresh code while online.
+  //
+  // cache: 'no-store' matters here too - without it, fetch() still honors
+  // GitHub Pages' own HTTP cache-control headers, so the browser can hand
+  // back a stale style.css/app.js straight from its HTTP cache without ever
+  // reaching the network, even though this code calls fetch() every time.
   event.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-store' })
       .then((res) => {
         const clone = res.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
