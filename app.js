@@ -80,9 +80,10 @@ async function triggerInstall() {
 
 function proceedPastInstallGate() {
   document.getElementById('installGate').style.display = 'none';
-  if (!REQUIRE_LOGIN || (token && employee)) {
-    showForm();
-    initAttendanceForm();
+  if (REQUIRE_LOGIN && token && employee) {
+    showHome();
+  } else if (!REQUIRE_LOGIN) {
+    showAttendanceForm();
   } else {
     showLogin();
   }
@@ -135,27 +136,56 @@ initInstallUI();
 // ============================================================
 function showLogin() {
   document.getElementById('loginScreen').style.display = 'block';
+  document.getElementById('homeScreen').style.display = 'none';
   document.getElementById('formContainer').style.display = 'none';
-  document.getElementById('appHeader').style.display = 'none';
-  document.getElementById('openLeaveBtn').style.display = 'none';
-  document.getElementById('openRecordsBtn').style.display = 'none';
+  closeDrawer();
 }
 
-function showForm() {
+// Shown right after login (or immediately if already standalone+logged in) -
+// the attendance form itself is now a secondary view reached via the
+// "Time In / Time Out" button or the drawer, not the first thing shown.
+function showHome() {
   document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('formContainer').style.display = 'none';
+  document.getElementById('homeScreen').style.display = 'block';
+  document.getElementById('drawerName').textContent = employee ? employee.fullName : '';
+
+  const firstName = employee && employee.fullName ? employee.fullName.split(',').pop().trim().split(' ')[0] : '';
+  document.getElementById('homeGreetingName').textContent = firstName ? `Hi, ${firstName}` : 'Hi';
+  document.getElementById('homeGreetingDate').textContent = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
+
+  loadTodayStatus();
+  loadAnnouncements();
+}
+
+// Only initializes the attendance form's own data (employee checkbox list,
+// server date, location, camera) the first time it's actually opened -
+// no reason to pay that cost just for someone browsing Home.
+let attendanceFormInitialized = false;
+function showAttendanceForm() {
+  document.getElementById('homeScreen').style.display = 'none';
   document.getElementById('formContainer').style.display = 'block';
-  // Nothing to show/log out of when login is switched off entirely.
-  document.getElementById('appHeader').style.display = REQUIRE_LOGIN ? 'flex' : 'none';
-  document.getElementById('whoAmI').textContent = employee ? `Logged in as ${employee.fullName}` : '';
   document.getElementById('submitterEmailGroup').style.display = REQUIRE_LOGIN ? 'none' : 'block';
   document.getElementById('gpsScopeNote').textContent = REQUIRE_LOGIN
     ? 'GPS is verified for you (the logged-in submitter) only — not individually for every name checked below.'
     : 'GPS is captured with this submission but not tied to a verified account while login is switched off — not individually for every name checked below.';
-  // Leave application and the records dashboard both need a verified
-  // identity - nothing to show without that.
-  document.getElementById('openLeaveBtn').style.display = REQUIRE_LOGIN && employee ? 'block' : 'none';
-  document.getElementById('openRecordsBtn').style.display = REQUIRE_LOGIN && employee ? 'block' : 'none';
+
+  if (!attendanceFormInitialized) {
+    attendanceFormInitialized = true;
+    initAttendanceForm();
+  }
 }
+
+document.getElementById('homeTimeInOutBtn').addEventListener('click', showAttendanceForm);
+document.getElementById('backToHomeBtn').addEventListener('click', () => {
+  if (REQUIRE_LOGIN && employee) {
+    showHome();
+  } else {
+    showLogin(); // login is off - there's no Home to go back to, just re-show the form
+  }
+});
 
 function logout() {
   token = null;
@@ -166,10 +196,9 @@ function logout() {
   // previous employee's cached attendance/leave calendar until reopening it.
   myRecordsData = null;
   dayRecordMap = null;
+  attendanceFormInitialized = false;
   showLogin();
 }
-
-document.getElementById('logoutBtn').addEventListener('click', logout);
 
 document.getElementById('loginForm').addEventListener('submit', async function (e) {
   e.preventDefault();
@@ -190,8 +219,11 @@ document.getElementById('loginForm').addEventListener('submit', async function (
       localStorage.setItem('attendance_token', token);
       localStorage.setItem('attendance_employee', JSON.stringify(employee));
       document.getElementById('loginPin').value = '';
-      showForm();
-      initAttendanceForm();
+      if (REQUIRE_LOGIN) {
+        showHome();
+      } else {
+        showAttendanceForm();
+      }
     } else {
       statusDiv.className = 'status-message error';
       statusDiv.textContent = result.error || 'Login failed.';
@@ -206,6 +238,146 @@ document.getElementById('loginForm').addEventListener('submit', async function (
     loginBtn.textContent = 'Log In';
   }
 });
+
+// ============================================================
+// Navigation drawer
+// ============================================================
+function openDrawer() {
+  document.getElementById('navDrawer').classList.add('open');
+  document.getElementById('navDrawerBackdrop').style.display = 'block';
+}
+
+function closeDrawer() {
+  document.getElementById('navDrawer').classList.remove('open');
+  document.getElementById('navDrawerBackdrop').style.display = 'none';
+}
+
+document.getElementById('hamburgerBtn').addEventListener('click', openDrawer);
+document.getElementById('navDrawerBackdrop').addEventListener('click', closeDrawer);
+document.getElementById('drawerLogoutBtn').addEventListener('click', () => {
+  closeDrawer();
+  logout();
+});
+
+// "Coming soon" for everything not built yet - keeps the same layout as the
+// reference design so each one just needs its click handler swapped out
+// for the real feature later, one at a time.
+const NAV_COMING_SOON_LABELS = {
+  personal: 'Personal Information',
+  advisory: 'Attendance Advisory',
+  schedule: 'Changed Schedule',
+  documents: 'Documents',
+  health: 'Health Track',
+  events: 'Events',
+  loans: 'Loans',
+  purchases: 'Purchases',
+  policies: 'Corporate Policies',
+  forms: 'HR Related Forms',
+  calendar: 'Calendar',
+  settings: 'Settings',
+};
+
+document.querySelectorAll('.nav-item[data-nav]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const nav = btn.dataset.nav;
+    closeDrawer();
+
+    if (nav === 'home') {
+      showHome();
+    } else if (nav === 'leave') {
+      openLeaveModal();
+    } else if (nav === 'records') {
+      openRecordsModal();
+    } else if (NAV_COMING_SOON_LABELS[nav]) {
+      showToast(`${NAV_COMING_SOON_LABELS[nav]} isn't built yet — coming soon.`);
+    }
+  });
+});
+
+// Small, self-dismissing notice - used for "coming soon" taps from the
+// drawer, which can be opened from Home or from the attendance form, so it
+// can't rely on either view's own #statusMessage element being visible.
+function showToast(message) {
+  let toast = document.getElementById('appToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'appToast';
+    toast.className = 'app-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('visible');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('visible'), 2500);
+}
+
+// ============================================================
+// Home — today's status + announcements
+// ============================================================
+async function loadTodayStatus() {
+  const el = document.getElementById('homeTimeStatus');
+  el.className = 'home-time-status';
+  el.textContent = "Loading today's status...";
+
+  try {
+    const result = await apiCall('getTodayStatus', { token });
+    if (result.error) throw new Error(result.error);
+
+    const entries = result.entries || [];
+    if (!entries.length) {
+      el.className = 'home-time-status not-yet';
+      el.textContent = "You haven't timed in today yet.";
+      return;
+    }
+
+    const timeIn = entries.find(e => e.purpose === 'Time In');
+    const timeOut = entries.slice().reverse().find(e => e.purpose === 'Time Out');
+    const formatTime = (ts) => {
+      const m = String(ts).match(/(\d{1,2}:\d{2}:\d{2})/);
+      return m ? m[1] : ts;
+    };
+
+    if (timeOut) {
+      el.className = 'home-time-status timed-out';
+      el.textContent = `Timed out at ${formatTime(timeOut.timestamp)} (in at ${timeIn ? formatTime(timeIn.timestamp) : '?'})`;
+    } else if (timeIn) {
+      el.className = 'home-time-status timed-in';
+      el.textContent = `Timed in at ${formatTime(timeIn.timestamp)}`;
+    } else {
+      el.className = 'home-time-status not-yet';
+      el.textContent = "You haven't timed in today yet.";
+    }
+  } catch (err) {
+    el.className = 'home-time-status';
+    el.textContent = "Could not load today's status.";
+  }
+}
+
+async function loadAnnouncements() {
+  const el = document.getElementById('announcementsList');
+  el.innerHTML = '<div class="loading">Loading announcements...</div>';
+
+  try {
+    const result = await apiCall('getAnnouncements', { token });
+    if (result.error) throw new Error(result.error);
+
+    const announcements = result.announcements || [];
+    if (!announcements.length) {
+      el.innerHTML = '<div class="no-results">No announcements right now.</div>';
+      return;
+    }
+
+    el.innerHTML = announcements.map(a => `
+      <div class="announcement-card">
+        <div class="announcement-title">${a.title}</div>
+        <div class="announcement-date">${a.date}</div>
+        <div class="announcement-message">${a.message}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    el.innerHTML = `<div class="no-results">Could not load announcements.</div>`;
+  }
+}
 
 // ============================================================
 // Leave Application — submits into the existing, separate Leave
@@ -239,7 +411,6 @@ function closeLeaveModal() {
   document.getElementById('leaveModal').style.display = 'none';
 }
 
-document.getElementById('openLeaveBtn').addEventListener('click', openLeaveModal);
 document.getElementById('leaveCloseBtn').addEventListener('click', closeLeaveModal);
 document.getElementById('leaveModal').addEventListener('click', (e) => {
   if (e.target.id === 'leaveModal') closeLeaveModal(); // click on the dim backdrop
@@ -400,7 +571,6 @@ function closeRecordsModal() {
   document.getElementById('recordsModal').style.display = 'none';
 }
 
-document.getElementById('openRecordsBtn').addEventListener('click', openRecordsModal);
 document.getElementById('recordsCloseBtn').addEventListener('click', closeRecordsModal);
 document.getElementById('recordsModal').addEventListener('click', (e) => {
   if (e.target.id === 'recordsModal') closeRecordsModal();

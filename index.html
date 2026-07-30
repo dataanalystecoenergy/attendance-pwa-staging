@@ -62,13 +62,58 @@
         </div>
     </div>
 
-    <div class="app-header" id="appHeader" style="display:none;">
-        <span class="who" id="whoAmI"></span>
-        <button type="button" class="logout-btn" id="logoutBtn">Log out</button>
+
+    <!-- ================= NAV DRAWER ================= -->
+    <div id="navDrawerBackdrop" class="nav-drawer-backdrop" style="display:none;"></div>
+    <div id="navDrawer" class="nav-drawer">
+        <div class="nav-drawer-header">
+            <div class="nav-drawer-name" id="drawerName"></div>
+            <div class="nav-drawer-sub">EcoEnergy Solar</div>
+        </div>
+        <div class="nav-drawer-items">
+            <button type="button" class="nav-item" data-nav="home"><span class="nav-icon">🏠</span>Home</button>
+            <button type="button" class="nav-item" data-nav="personal"><span class="nav-icon">👤</span>Personal Information</button>
+            <button type="button" class="nav-item" data-nav="leave"><span class="nav-icon">📝</span>Leave Application</button>
+            <button type="button" class="nav-item" data-nav="advisory"><span class="nav-icon">🔖</span>Attendance Advisory</button>
+            <button type="button" class="nav-item" data-nav="schedule"><span class="nav-icon">🗓️</span>Changed Schedule</button>
+            <button type="button" class="nav-item" data-nav="records"><span class="nav-icon">🕒</span>Daily Time Record</button>
+            <button type="button" class="nav-item" data-nav="documents"><span class="nav-icon">📄</span>Documents</button>
+            <button type="button" class="nav-item" data-nav="health"><span class="nav-icon">❤️</span>Health Track</button>
+            <button type="button" class="nav-item" data-nav="events"><span class="nav-icon">⭐</span>Events</button>
+            <button type="button" class="nav-item" data-nav="loans"><span class="nav-icon">💰</span>Loans</button>
+            <button type="button" class="nav-item" data-nav="purchases"><span class="nav-icon">🛒</span>Purchases</button>
+            <button type="button" class="nav-item" data-nav="policies"><span class="nav-icon">📋</span>Corporate Policies</button>
+            <button type="button" class="nav-item" data-nav="forms"><span class="nav-icon">🗂️</span>HR Related Forms</button>
+            <button type="button" class="nav-item" data-nav="calendar"><span class="nav-icon">📅</span>Calendar</button>
+            <button type="button" class="nav-item" data-nav="settings"><span class="nav-icon">⚙️</span>Settings</button>
+            <div class="nav-divider"></div>
+            <button type="button" class="nav-item nav-item-logout" id="drawerLogoutBtn"><span class="nav-icon">🚪</span>Log out</button>
+        </div>
     </div>
 
-    <button type="button" id="openLeaveBtn" class="leave-btn" style="display:none;">📝 Apply for a Leave</button>
-    <button type="button" id="openRecordsBtn" class="leave-btn records-btn" style="display:none;">📅 My Attendance &amp; Leave</button>
+    <!-- ================= HOME ================= -->
+    <div id="homeScreen" style="display:none;">
+        <div class="home-topbar">
+            <button type="button" id="hamburgerBtn" class="hamburger-btn" aria-label="Open menu">☰</button>
+            <div class="home-topbar-title">Home</div>
+            <div class="home-topbar-spacer"></div>
+        </div>
+
+        <div class="form-container home-greeting-card">
+            <div class="home-greeting-name" id="homeGreetingName"></div>
+            <div class="home-greeting-date" id="homeGreetingDate"></div>
+            <div class="home-time-status" id="homeTimeStatus">Loading today's status...</div>
+        </div>
+
+        <button type="button" id="homeTimeInOutBtn" class="submit-btn home-timeinout-btn">⏱️ Time In / Time Out</button>
+
+        <div class="form-container">
+            <h2 class="home-section-title">📢 Announcements</h2>
+            <div id="announcementsList" class="announcements-list">
+                <div class="loading">Loading announcements...</div>
+            </div>
+        </div>
+    </div>
 
     <!-- ================= LOGIN SCREEN ================= -->
     <div class="form-container" id="loginScreen" style="display:none;">
@@ -90,6 +135,7 @@
 
     <!-- ================= ATTENDANCE FORM (shown after login) ================= -->
     <div class="form-container" id="formContainer" style="display:none;">
+        <button type="button" id="backToHomeBtn" class="back-to-home-btn">‹ Back to Home</button>
         <div id="statusMessage" class="status-message"></div>
         <form id="attendanceForm">
             <!-- Only shown while login is switched off (REQUIRE_LOGIN = false in app.js) -->
