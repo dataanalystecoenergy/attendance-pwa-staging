@@ -450,6 +450,25 @@
         </div>
     </div>
 
+    <!-- ================= HOLIDAYS MODAL ================= -->
+    <!-- Read-only list for employees - the underlying Holidays sheet is
+         editable directly (same pattern as Announcements), not through any
+         in-app admin UI. -->
+    <div id="holidaysModal" class="leave-overlay" style="display:none;">
+        <div class="leave-overlay-card">
+            <div class="leave-overlay-header">
+                <h2>📅 PH Holidays</h2>
+                <button type="button" id="holidaysCloseBtn" class="install-overlay-close">✕</button>
+            </div>
+
+            <div id="holidaysStatus" class="status-message"></div>
+
+            <div id="holidaysList" class="holidays-list">
+                <div class="loading">Loading holidays...</div>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= CAMERA MODAL ================= -->
     <div id="cameraModal" class="camera-modal" style="display:none;">
         <div class="camera-modal-inner">

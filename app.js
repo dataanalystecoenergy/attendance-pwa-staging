@@ -291,7 +291,6 @@ const NAV_COMING_SOON_LABELS = {
   events: 'Events',
   policies: 'Corporate Policies',
   forms: 'HR Related Forms',
-  calendar: 'Calendar',
   settings: 'Settings',
 };
 
@@ -308,6 +307,8 @@ document.querySelectorAll('.nav-item[data-nav]').forEach((btn) => {
       openRecordsModal();
     } else if (nav === 'documents') {
       openDocumentsModal();
+    } else if (nav === 'calendar') {
+      openHolidaysModal();
     } else if (NAV_COMING_SOON_LABELS[nav]) {
       showToast(`${NAV_COMING_SOON_LABELS[nav]} isn't built yet — coming soon.`);
     }
@@ -530,6 +531,61 @@ document.getElementById('documentFileInput').addEventListener('change', async fu
     pendingUploadType = null;
   }
 });
+
+// ============================================================
+// Philippine Holidays — read-only list; the underlying sheet is editable
+// directly (same pattern as Announcements), not through any in-app admin UI.
+// ============================================================
+function openHolidaysModal() {
+  document.getElementById('holidaysStatus').style.display = 'none';
+  document.getElementById('holidaysModal').style.display = 'flex';
+  loadHolidays();
+}
+
+function closeHolidaysModal() {
+  document.getElementById('holidaysModal').style.display = 'none';
+}
+
+document.getElementById('holidaysCloseBtn').addEventListener('click', closeHolidaysModal);
+document.getElementById('holidaysModal').addEventListener('click', (e) => {
+  if (e.target.id === 'holidaysModal') closeHolidaysModal(); // click on the dim backdrop
+});
+
+async function loadHolidays() {
+  const el = document.getElementById('holidaysList');
+  el.innerHTML = '<div class="loading">Loading holidays...</div>';
+
+  try {
+    const result = await apiCall('getHolidays', { token });
+    if (result.error) throw new Error(result.error);
+
+    const holidays = result.holidays || [];
+    if (!holidays.length) {
+      el.innerHTML = '<div class="no-results">No holidays listed yet.</div>';
+      return;
+    }
+
+    el.innerHTML = holidays.map(h => {
+      const dateObj = new Date(h.date + 'T00:00:00');
+      const dateLabel = isNaN(dateObj) ? h.date : dateObj.toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+      });
+      const typeClass = h.type === 'Regular Holiday' ? 'holiday-regular' : 'holiday-special';
+      return `
+        <div class="holiday-row">
+          <div class="holiday-date">${dateLabel}</div>
+          <div class="holiday-info">
+            <div class="holiday-name">${h.name}</div>
+            ${h.type ? `<span class="holiday-type ${typeClass}">${h.type}</span>` : ''}
+            ${h.notes ? `<div class="holiday-notes">${h.notes}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    el.innerHTML = `<div class="no-results">Could not load holidays: ${err.message}</div>`;
+  }
+}
 
 document.getElementById('leaveForm').addEventListener('submit', async function (e) {
   e.preventDefault();
