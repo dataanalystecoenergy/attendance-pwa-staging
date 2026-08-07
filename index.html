@@ -116,6 +116,10 @@
 
     <!-- ================= LOGIN SCREEN ================= -->
     <div class="form-container" id="loginScreen" style="display:none;">
+        <div class="purpose-toggle" id="loginModeToggle" style="margin-bottom:18px;">
+            <button type="button" class="purpose-btn selected" id="loginModeLoginBtn" data-mode="login">Log In</button>
+            <button type="button" class="purpose-btn" id="loginModeNoAuthBtn" data-mode="noauth">⏱️ Time In/Out</button>
+        </div>
         <h1>Employee Login</h1>
         <div id="loginStatus" class="status-message"></div>
         <form id="loginForm">

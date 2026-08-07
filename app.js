@@ -21,6 +21,15 @@ let employeeData = [];
 let allEmployees = [];
 let serverToday = null;
 
+// Session-only choice from the login screen's "Time In/Out" tab - lets
+// someone submit attendance without logging in even while REQUIRE_LOGIN is
+// on, same unauthenticated path production still uses. Never persisted
+// (resets to false on reload) so the login screen is always the default.
+let noAuthMode = false;
+function authActive() {
+  return REQUIRE_LOGIN && !noAuthMode;
+}
+
 // ============================================================
 // API helper — POST with text/plain body to avoid a CORS preflight
 // (Apps Script's doPost doesn't answer OPTIONS requests).
@@ -169,10 +178,11 @@ function showHome() {
 // no reason to pay that cost just for someone browsing Home.
 let attendanceFormInitialized = false;
 function showAttendanceForm() {
+  document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('homeScreen').style.display = 'none';
   document.getElementById('formContainer').style.display = 'block';
-  document.getElementById('submitterEmailGroup').style.display = REQUIRE_LOGIN ? 'none' : 'block';
-  document.getElementById('gpsScopeNote').textContent = REQUIRE_LOGIN
+  document.getElementById('submitterEmailGroup').style.display = authActive() ? 'none' : 'block';
+  document.getElementById('gpsScopeNote').textContent = authActive()
     ? 'GPS is verified for you (the logged-in submitter) only — not individually for every name checked below.'
     : 'GPS is captured with this submission but not tied to a verified account while login is switched off — not individually for every name checked below.';
 
@@ -184,11 +194,21 @@ function showAttendanceForm() {
 
 document.getElementById('homeTimeInOutBtn').addEventListener('click', showAttendanceForm);
 document.getElementById('backToHomeBtn').addEventListener('click', () => {
-  if (REQUIRE_LOGIN && employee) {
+  if (authActive() && employee) {
     showHome();
   } else {
-    showLogin(); // login is off - there's no Home to go back to, just re-show the form
+    noAuthMode = false;
+    showLogin(); // no verified session to go back to - just re-show the login screen
   }
+});
+
+document.getElementById('loginModeLoginBtn').addEventListener('click', () => {
+  noAuthMode = false;
+  showLogin();
+});
+document.getElementById('loginModeNoAuthBtn').addEventListener('click', () => {
+  noAuthMode = true;
+  showAttendanceForm();
 });
 
 function logout() {
@@ -1175,7 +1195,7 @@ function validateAgency() {
 }
 
 function validateSubmitterEmail() {
-  if (REQUIRE_LOGIN) return true; // identity comes from the session instead
+  if (authActive()) return true; // identity comes from the session instead
   const emailField = document.getElementById('submitterEmail');
   if (!emailField.value || !emailField.checkValidity()) {
     emailField.style.borderColor = '#dc3545';
@@ -1273,13 +1293,13 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
       imageType: 'image/jpeg',
       location: currentPosition,
     };
-    if (!REQUIRE_LOGIN) {
+    if (!authActive()) {
       submissionData.email = formData.get('submitterEmail');
     }
 
     showMessage('Saving attendance record...', 'loading');
 
-    const result = REQUIRE_LOGIN
+    const result = authActive()
       ? await apiCall('submitAttendance', { token, data: submissionData })
       : await apiCall('submitAttendanceNoAuth', { data: submissionData });
 
