@@ -1001,6 +1001,56 @@ textarea {
     gap: 10px;
 }
 
+.documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.document-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+
+.document-type {
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 0.95rem;
+}
+
+.document-uploaded {
+    font-size: 0.8rem;
+    color: var(--success-text);
+    margin-top: 2px;
+}
+
+.document-pending {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.document-locked {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--panel-bg-hover);
+    border-radius: 12px;
+    padding: 4px 12px;
+    flex-shrink: 0;
+}
+
+.document-upload-btn {
+    flex-shrink: 0;
+    padding: 8px 16px;
+}
+
 .announcement-card {
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);

@@ -427,6 +427,29 @@
         </div>
     </div>
 
+    <!-- ================= DOCUMENTS MODAL ================= -->
+    <!-- Employees upload their own SSS/Pag-IBIG/PhilHealth/TIN once each -
+         stored in a dedicated Documents spreadsheet + Drive folder, kept
+         separate from every other system this app touches. One-time only
+         by design: once a type shows as uploaded, re-uploading is blocked
+         (contact HR directly to have one replaced). -->
+    <div id="documentsModal" class="leave-overlay" style="display:none;">
+        <div class="leave-overlay-card">
+            <div class="leave-overlay-header">
+                <h2>📄 Documents</h2>
+                <button type="button" id="documentsCloseBtn" class="install-overlay-close">✕</button>
+            </div>
+
+            <div id="documentsStatus" class="status-message"></div>
+
+            <div id="documentsList" class="documents-list">
+                <div class="loading">Loading documents...</div>
+            </div>
+
+            <input type="file" id="documentFileInput" accept="image/*,.pdf" style="display:none;">
+        </div>
+    </div>
+
     <!-- ================= CAMERA MODAL ================= -->
     <div id="cameraModal" class="camera-modal" style="display:none;">
         <div class="camera-modal-inner">

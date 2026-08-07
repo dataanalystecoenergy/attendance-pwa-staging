@@ -288,7 +288,6 @@ document.getElementById('drawerLogoutBtn').addEventListener('click', () => {
 // for the real feature later, one at a time.
 const NAV_COMING_SOON_LABELS = {
   personal: 'Personal Information',
-  documents: 'Documents',
   events: 'Events',
   policies: 'Corporate Policies',
   forms: 'HR Related Forms',
@@ -307,6 +306,8 @@ document.querySelectorAll('.nav-item[data-nav]').forEach((btn) => {
       openLeaveModal();
     } else if (nav === 'records') {
       openRecordsModal();
+    } else if (nav === 'documents') {
+      openDocumentsModal();
     } else if (NAV_COMING_SOON_LABELS[nav]) {
       showToast(`${NAV_COMING_SOON_LABELS[nav]} isn't built yet — coming soon.`);
     }
@@ -433,6 +434,101 @@ function closeLeaveModal() {
 document.getElementById('leaveCloseBtn').addEventListener('click', closeLeaveModal);
 document.getElementById('leaveModal').addEventListener('click', (e) => {
   if (e.target.id === 'leaveModal') closeLeaveModal(); // click on the dim backdrop
+});
+
+// ============================================================
+// Documents — employees upload their own SSS/Pag-IBIG/PhilHealth/TIN once
+// each; stored in a dedicated Documents spreadsheet + Drive folder, kept
+// entirely separate from every other system this app touches. One-time
+// only by design - the backend refuses a second upload for a type that
+// already has a link on file (contact HR directly to replace one).
+// ============================================================
+const DOCUMENT_TYPES = ['SSS', 'Pag-IBIG', 'PhilHealth', 'TIN'];
+let pendingUploadType = null;
+
+function openDocumentsModal() {
+  document.getElementById('documentsStatus').style.display = 'none';
+  document.getElementById('documentsModal').style.display = 'flex';
+  loadMyDocuments();
+}
+
+function closeDocumentsModal() {
+  document.getElementById('documentsModal').style.display = 'none';
+}
+
+document.getElementById('documentsCloseBtn').addEventListener('click', closeDocumentsModal);
+document.getElementById('documentsModal').addEventListener('click', (e) => {
+  if (e.target.id === 'documentsModal') closeDocumentsModal(); // click on the dim backdrop
+});
+
+async function loadMyDocuments() {
+  const el = document.getElementById('documentsList');
+  el.innerHTML = '<div class="loading">Loading documents...</div>';
+
+  try {
+    const result = await apiCall('getMyDocuments', { token });
+    if (result.error) throw new Error(result.error);
+
+    const documents = result.documents || DOCUMENT_TYPES.map(type => ({ type, uploaded: false }));
+    el.innerHTML = documents.map(doc => `
+      <div class="document-row">
+        <div class="document-info">
+          <div class="document-type">${doc.type}</div>
+          ${doc.uploaded
+            ? `<div class="document-uploaded">✅ Submitted${doc.uploadedAt ? ' on ' + doc.uploadedAt : ''}</div>`
+            : `<div class="document-pending">Not submitted yet</div>`}
+        </div>
+        ${doc.uploaded
+          ? `<span class="document-locked">Locked</span>`
+          : `<button type="button" class="control-btn document-upload-btn" data-doc-type="${doc.type}">Upload</button>`}
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.document-upload-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pendingUploadType = btn.dataset.docType;
+        document.getElementById('documentFileInput').click();
+      });
+    });
+  } catch (err) {
+    el.innerHTML = `<div class="no-results">Could not load documents: ${err.message}</div>`;
+  }
+}
+
+document.getElementById('documentFileInput').addEventListener('change', async function () {
+  const file = this.files[0];
+  this.value = ''; // allow re-selecting the same file later if this attempt fails
+  if (!file || !pendingUploadType) return;
+
+  const statusDiv = document.getElementById('documentsStatus');
+  statusDiv.className = 'status-message loading';
+  statusDiv.textContent = `Uploading ${pendingUploadType}...`;
+  statusDiv.style.display = 'block';
+
+  try {
+    const fileData = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Could not read the selected file.'));
+      reader.readAsDataURL(file);
+    });
+
+    const result = await apiCall('uploadDocument', {
+      token,
+      data: { docType: pendingUploadType, fileData, fileName: file.name, fileType: file.type },
+    });
+
+    if (!result.success) throw new Error(result.error || 'Upload failed.');
+
+    statusDiv.className = 'status-message success';
+    statusDiv.textContent = `${pendingUploadType} submitted successfully.`;
+    loadMyDocuments();
+  } catch (err) {
+    statusDiv.className = 'status-message error';
+    statusDiv.textContent = err.message;
+  } finally {
+    pendingUploadType = null;
+  }
 });
 
 document.getElementById('leaveForm').addEventListener('submit', async function (e) {
