@@ -288,13 +288,8 @@ document.getElementById('drawerLogoutBtn').addEventListener('click', () => {
 // for the real feature later, one at a time.
 const NAV_COMING_SOON_LABELS = {
   personal: 'Personal Information',
-  advisory: 'Attendance Advisory',
-  schedule: 'Changed Schedule',
   documents: 'Documents',
-  health: 'Health Track',
   events: 'Events',
-  loans: 'Loans',
-  purchases: 'Purchases',
   policies: 'Corporate Policies',
   forms: 'HR Related Forms',
   calendar: 'Calendar',

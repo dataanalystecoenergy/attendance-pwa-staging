@@ -1122,6 +1122,12 @@ textarea {
     width: 22px;
     text-align: center;
     flex-shrink: 0;
+    /* Emoji glyphs are full-color by design - grayscale desaturates them
+       to black/white/gray so the drawer reads as one consistent icon set
+       instead of a mix of colors, without swapping to a whole new icon
+       library just for this. */
+    filter: grayscale(1);
+    opacity: 0.75;
 }
 
 .nav-divider {
