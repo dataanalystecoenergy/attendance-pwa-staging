@@ -665,17 +665,27 @@ function formatTimestampText(date) {
   }) + ' PHT';
 }
 
-// Preloaded once on script load - watermarks every captured/fallback-uploaded
-// photo alongside the timestamp. Loading is async, so callers must await
-// watermarkLogoReady before drawing; if it fails to load for any reason,
-// capture still proceeds without it rather than breaking submission.
+// Watermarks every captured/fallback-uploaded photo alongside the
+// timestamp. Loading is async, so callers must await watermarkLogoReady
+// before drawing; if it fails to load for any reason, capture still
+// proceeds without it rather than breaking submission.
+//
+// Not started until initAttendanceForm() actually runs (first time the
+// attendance form opens), not on script load - this 91KB image has no
+// reason to download for someone who only ever looks at Home/Leave/etc.
+// this session. Still "usually already resolved well before someone taps
+// the shutter" per the comment at its await sites, since form init happens
+// well before the camera does.
 const watermarkLogo = new Image();
 let watermarkLogoLoaded = false;
-const watermarkLogoReady = new Promise((resolve) => {
+let watermarkLogoReady = new Promise((resolve) => {
   watermarkLogo.onload = () => { watermarkLogoLoaded = true; resolve(true); };
   watermarkLogo.onerror = () => resolve(false);
 });
-watermarkLogo.src = 'watermark-logo.png';
+function startWatermarkLogoLoad() {
+  if (watermarkLogo.src) return; // already started
+  watermarkLogo.src = 'watermark-logo.png';
+}
 
 function drawTimestampOverlay(ctx, width, height, text) {
   const bannerHeight = Math.max(36, Math.round(height * 0.07));
@@ -1229,6 +1239,7 @@ function initAttendanceForm() {
   setDefaultDate();
   setupSiteSearch();
   setupPurposeToggle();
+  startWatermarkLogoLoad();
 }
 
 document.getElementById('attendanceForm').addEventListener('submit', async function (e) {
