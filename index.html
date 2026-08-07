@@ -463,9 +463,23 @@
 
             <div id="holidaysStatus" class="status-message"></div>
 
-            <div id="holidaysList" class="holidays-list">
-                <div class="loading">Loading holidays...</div>
+            <div class="calendar-nav">
+                <button type="button" id="holidayCalendarPrevBtn" class="control-btn" style="flex:0 0 auto;">‹</button>
+                <div id="holidayCalendarMonthLabel" class="calendar-month-label"></div>
+                <button type="button" id="holidayCalendarNextBtn" class="control-btn" style="flex:0 0 auto;">›</button>
             </div>
+
+            <div class="calendar-legend">
+                <span class="legend-item"><span class="legend-swatch legend-holiday-regular"></span>Regular Holiday</span>
+                <span class="legend-item"><span class="legend-swatch legend-holiday-special"></span>Special Non-Working</span>
+            </div>
+
+            <div class="calendar-weekdays">
+                <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+            </div>
+            <div id="holidayCalendarGrid" class="calendar-grid"></div>
+
+            <div id="holidayMonthList" class="holidays-list"></div>
         </div>
     </div>
 

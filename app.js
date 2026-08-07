@@ -533,13 +533,110 @@ document.getElementById('documentFileInput').addEventListener('change', async fu
 });
 
 // ============================================================
-// Philippine Holidays — read-only list; the underlying sheet is editable
-// directly (same pattern as Announcements), not through any in-app admin UI.
+// Philippine Holidays — month-grid calendar (same look as the Daily Time
+// Record calendar), browsed client-side after one fetch. The underlying
+// sheet is editable directly (same pattern as Announcements), not through
+// any in-app admin UI. A grid cell can't fit a holiday's name, so the list
+// below the grid shows the names for whichever month is currently in view.
 // ============================================================
-function openHolidaysModal() {
-  document.getElementById('holidaysStatus').style.display = 'none';
+let holidaysData = null; // [{date, name, type, notes}, ...] - cached after first fetch
+let holidayDateMap = null; // Map<'yyyy-MM-dd', {name, type, notes}>
+// Own Date() rather than reusing the shared `today` const below - that one
+// isn't declared until the My Records section further down the file, and
+// this runs at module load time, before it would exist yet.
+const holidayCalendarToday = new Date();
+let holidayCalendarYear = holidayCalendarToday.getFullYear();
+let holidayCalendarMonth = holidayCalendarToday.getMonth(); // 0-indexed
+
+function renderHolidayCalendar() {
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  document.getElementById('holidayCalendarMonthLabel').textContent = `${monthNames[holidayCalendarMonth]} ${holidayCalendarYear}`;
+
+  const firstWeekday = new Date(holidayCalendarYear, holidayCalendarMonth, 1).getDay();
+  const daysInMonth = new Date(holidayCalendarYear, holidayCalendarMonth + 1, 0).getDate();
+  const todayKey = toDateKey(holidayCalendarToday.getFullYear(), holidayCalendarToday.getMonth(), holidayCalendarToday.getDate());
+
+  const grid = document.getElementById('holidayCalendarGrid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < firstWeekday; i++) {
+    grid.appendChild(Object.assign(document.createElement('div'), { className: 'calendar-day empty' }));
+  }
+
+  const monthHolidays = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = toDateKey(holidayCalendarYear, holidayCalendarMonth, day);
+    const cell = document.createElement('div');
+    cell.className = 'calendar-day';
+    cell.textContent = day;
+
+    const holiday = holidayDateMap.get(key);
+    if (holiday) {
+      const isRegular = holiday.type === 'Regular Holiday';
+      cell.classList.add(isRegular ? 'holiday-regular' : 'holiday-special');
+      cell.title = holiday.name;
+      monthHolidays.push(Object.assign({ date: key }, holiday));
+    }
+
+    if (key === todayKey) cell.classList.add('today');
+    grid.appendChild(cell);
+  }
+
+  const listEl = document.getElementById('holidayMonthList');
+  if (!monthHolidays.length) {
+    listEl.innerHTML = '<div class="no-results">No holidays this month.</div>';
+    return;
+  }
+  listEl.innerHTML = monthHolidays.map(h => {
+    const dateObj = new Date(h.date + 'T00:00:00');
+    const dayLabel = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const typeClass = h.type === 'Regular Holiday' ? 'holiday-regular' : 'holiday-special';
+    return `
+      <div class="holiday-row">
+        <div class="holiday-date">${dayLabel}</div>
+        <div class="holiday-info">
+          <div class="holiday-name">${h.name}</div>
+          ${h.type ? `<span class="holiday-type ${typeClass}">${h.type}</span>` : ''}
+          ${h.notes ? `<div class="holiday-notes">${h.notes}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function changeHolidayCalendarMonth(delta) {
+  holidayCalendarMonth += delta;
+  if (holidayCalendarMonth < 0) { holidayCalendarMonth = 11; holidayCalendarYear--; }
+  else if (holidayCalendarMonth > 11) { holidayCalendarMonth = 0; holidayCalendarYear++; }
+  renderHolidayCalendar();
+}
+
+async function openHolidaysModal() {
   document.getElementById('holidaysModal').style.display = 'flex';
-  loadHolidays();
+  document.getElementById('holidaysStatus').style.display = 'none';
+
+  if (!holidaysData) {
+    const statusDiv = document.getElementById('holidaysStatus');
+    statusDiv.className = 'status-message loading';
+    statusDiv.textContent = 'Loading holidays...';
+    statusDiv.style.display = 'block';
+
+    try {
+      const result = await apiCall('getHolidays', { token });
+      if (result.error) throw new Error(result.error);
+      holidaysData = result.holidays || [];
+      holidayDateMap = new Map(holidaysData.map(h => [h.date, h]));
+      statusDiv.style.display = 'none';
+      renderHolidayCalendar();
+    } catch (err) {
+      statusDiv.className = 'status-message error';
+      statusDiv.textContent = 'Could not load holidays: ' + err.message;
+      statusDiv.style.display = 'block';
+    }
+  } else {
+    renderHolidayCalendar();
+  }
 }
 
 function closeHolidaysModal() {
@@ -550,42 +647,8 @@ document.getElementById('holidaysCloseBtn').addEventListener('click', closeHolid
 document.getElementById('holidaysModal').addEventListener('click', (e) => {
   if (e.target.id === 'holidaysModal') closeHolidaysModal(); // click on the dim backdrop
 });
-
-async function loadHolidays() {
-  const el = document.getElementById('holidaysList');
-  el.innerHTML = '<div class="loading">Loading holidays...</div>';
-
-  try {
-    const result = await apiCall('getHolidays', { token });
-    if (result.error) throw new Error(result.error);
-
-    const holidays = result.holidays || [];
-    if (!holidays.length) {
-      el.innerHTML = '<div class="no-results">No holidays listed yet.</div>';
-      return;
-    }
-
-    el.innerHTML = holidays.map(h => {
-      const dateObj = new Date(h.date + 'T00:00:00');
-      const dateLabel = isNaN(dateObj) ? h.date : dateObj.toLocaleDateString('en-US', {
-        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-      });
-      const typeClass = h.type === 'Regular Holiday' ? 'holiday-regular' : 'holiday-special';
-      return `
-        <div class="holiday-row">
-          <div class="holiday-date">${dateLabel}</div>
-          <div class="holiday-info">
-            <div class="holiday-name">${h.name}</div>
-            ${h.type ? `<span class="holiday-type ${typeClass}">${h.type}</span>` : ''}
-            ${h.notes ? `<div class="holiday-notes">${h.notes}</div>` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
-  } catch (err) {
-    el.innerHTML = `<div class="no-results">Could not load holidays: ${err.message}</div>`;
-  }
-}
+document.getElementById('holidayCalendarPrevBtn').addEventListener('click', () => changeHolidayCalendarMonth(-1));
+document.getElementById('holidayCalendarNextBtn').addEventListener('click', () => changeHolidayCalendarMonth(1));
 
 document.getElementById('leaveForm').addEventListener('submit', async function (e) {
   e.preventDefault();

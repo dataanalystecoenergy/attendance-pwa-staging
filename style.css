@@ -507,10 +507,15 @@ button, input, textarea, select {
 .calendar-day.leave { background: var(--navy-light); color: white; font-weight: 700; }
 .calendar-day.rest { background: #6b7a8d; color: white; font-weight: 700; }
 .calendar-day.absent { background: #d24444; color: white; font-weight: 700; }
+.calendar-day.holiday-regular { background: #2e9e5b; color: white; font-weight: 700; }
+.calendar-day.holiday-special { background: var(--accent-blue); color: white; font-weight: 700; }
 
 .calendar-day.today {
     box-shadow: 0 0 0 2px var(--gold) inset;
 }
+
+.legend-holiday-regular { background: #2e9e5b; }
+.legend-holiday-special { background: var(--accent-blue); }
 
 .form-container {
     margin-top: 15px;
