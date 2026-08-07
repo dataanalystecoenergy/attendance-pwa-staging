@@ -327,13 +327,6 @@ async function loadTodayStatus() {
     const result = await apiCall('getTodayStatus', { token });
     if (result.error) throw new Error(result.error);
 
-    // TEMPORARY - remove once the "not timed in" bug is confirmed fixed.
-    const debugBox = document.getElementById('homeDebugBox');
-    if (result.debug) {
-      debugBox.style.display = 'block';
-      debugBox.textContent = JSON.stringify(result.debug, null, 2);
-    }
-
     const entries = result.entries || [];
     if (!entries.length) {
       el.className = 'home-time-status not-yet';
