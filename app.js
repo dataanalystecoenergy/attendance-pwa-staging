@@ -245,6 +245,7 @@ function logout() {
   // previous employee's cached attendance/leave calendar until reopening it.
   myRecordsData = null;
   dayRecordMap = null;
+  localStorage.removeItem(MY_RECORDS_CACHE_KEY);
   attendanceFormInitialized = false;
   showLogin();
 }
@@ -720,7 +721,39 @@ document.getElementById('leaveForm').addEventListener('submit', async function (
 // - fetched once via getMyRecords, then browsed month-to-month entirely
 // client-side, no re-fetch per month.
 // ============================================================
-let myRecordsData = null; // { days: [{date, status, timeIn, timeOut}, ...] } - cached after first fetch
+let myRecordsData = null; // { days: [{date, status, timeIn, timeOut}, ...] } - cached in-memory after first fetch this session
+
+// "Attendance Tracking 2026" is a full-year, one-row-per-employee-per-day
+// sheet - apiGetMyRecords has to scan the whole thing to find this
+// employee's rows scattered through it, which only gets more expensive as
+// the year goes on. That sheet is itself only synced on a periodic batch
+// delay (not instant), so a 2-hour-old copy is very unlikely to be stale in
+// a way that matters - persisting it means reopening the app later the
+// same day skips that expensive scan entirely instead of redoing it.
+const MY_RECORDS_CACHE_KEY = 'attendance_my_records_cache';
+const MY_RECORDS_CACHE_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+
+function loadMyRecordsCache_() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(MY_RECORDS_CACHE_KEY) || 'null');
+    if (!cached || cached.employeeId !== (employee && employee.employeeId)) return null;
+    if (Date.now() - cached.fetchedAt > MY_RECORDS_CACHE_MAX_AGE_MS) return null;
+    return cached.days;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveMyRecordsCache_(days) {
+  try {
+    localStorage.setItem(MY_RECORDS_CACHE_KEY, JSON.stringify({
+      employeeId: employee && employee.employeeId,
+      fetchedAt: Date.now(),
+      days,
+    }));
+  } catch (e) { /* storage full/unavailable - not worth failing the page over */ }
+}
+
 let dayRecordMap = null; // Map<'yyyy-MM-dd', {status, timeIn, timeOut}>
 const today = new Date();
 let calendarYear = today.getFullYear();
@@ -789,6 +822,14 @@ async function openRecordsPage() {
   document.getElementById('recordsStatus').style.display = 'none';
 
   if (!myRecordsData) {
+    const cachedDays = loadMyRecordsCache_();
+    if (cachedDays) {
+      myRecordsData = { days: cachedDays };
+      dayRecordMap = new Map(cachedDays.map(d => [d.date, d]));
+      renderCalendar();
+      return; // instant from cache - refetches once the cache ages past MY_RECORDS_CACHE_MAX_AGE_MS
+    }
+
     const statusDiv = document.getElementById('recordsStatus');
     statusDiv.className = 'status-message loading';
     statusDiv.textContent = 'Loading your records...';
@@ -799,6 +840,7 @@ async function openRecordsPage() {
       if (result.error) throw new Error(result.error);
       myRecordsData = result;
       dayRecordMap = new Map((result.days || []).map(d => [d.date, d]));
+      saveMyRecordsCache_(result.days || []);
       statusDiv.style.display = 'none';
       renderCalendar();
     } catch (err) {
@@ -1116,11 +1158,25 @@ document.getElementById('retakePhotoBtn').addEventListener('click', () => {
   openCamera();
 });
 
+// Caps the longest edge so uploads stay small and fast. Full-resolution
+// phone photos are several MB as base64, and that slow upload is exactly
+// what can make submissions time out ("Load failed") on weak mobile signal
+// - the row can still save server-side, but the confirmation never makes
+// it back. 1600px keeps the person/timestamp/watermark clearly legible.
+// (Same setting already shipped on production for this exact reason.)
+const MAX_PHOTO_EDGE = 1600;
+const PHOTO_JPEG_QUALITY = 0.8;
+function scaledPhotoDimensions(srcW, srcH) {
+  const longest = Math.max(srcW, srcH);
+  if (longest <= MAX_PHOTO_EDGE) return { width: srcW, height: srcH };
+  const scale = MAX_PHOTO_EDGE / longest;
+  return { width: Math.round(srcW * scale), height: Math.round(srcH * scale) };
+}
+
 document.getElementById('cameraShutterBtn').addEventListener('click', async () => {
   const video = document.getElementById('cameraVideo');
   const canvas = document.getElementById('captureCanvas');
-  const w = video.videoWidth;
-  const h = video.videoHeight;
+  const { width: w, height: h } = scaledPhotoDimensions(video.videoWidth, video.videoHeight);
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
@@ -1128,7 +1184,7 @@ document.getElementById('cameraShutterBtn').addEventListener('click', async () =
   await watermarkLogoReady; // usually already resolved well before someone taps the shutter
   drawTimestampOverlay(ctx, w, h, formatTimestampText(syncedNow()));
 
-  capturedImageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  capturedImageDataUrl = canvas.toDataURL('image/jpeg', PHOTO_JPEG_QUALITY);
   stopCamera();
   showPhotoPreview();
 });
@@ -1148,13 +1204,14 @@ document.getElementById('attendanceImageFallback').addEventListener('change', as
   reader.onload = () => {
     img.onload = async () => {
       const canvas = document.getElementById('captureCanvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
+      const { width, height } = scaledPhotoDimensions(img.naturalWidth, img.naturalHeight);
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
+      ctx.drawImage(img, 0, 0, width, height);
       await watermarkLogoReady;
-      drawTimestampOverlay(ctx, canvas.width, canvas.height, formatTimestampText(syncedNow()));
-      capturedImageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      drawTimestampOverlay(ctx, width, height, formatTimestampText(syncedNow()));
+      capturedImageDataUrl = canvas.toDataURL('image/jpeg', PHOTO_JPEG_QUALITY);
       showPhotoPreview();
     };
     img.src = reader.result;
@@ -1166,23 +1223,47 @@ document.getElementById('attendanceImageFallback').addEventListener('change', as
 // Attendance form — ported from the original app, google.script.run swapped
 // for apiCall(), email field removed (server derives it from the session).
 // ============================================================
+const EMPLOYEE_CACHE_KEY = 'attendance_employees_cache';
+
+function renderEmployeeList(employees) {
+  allEmployees = employees;
+  employeeData = employees;
+  generateCheckboxes(employees);
+  document.getElementById('loadingNames').style.display = 'none';
+  document.getElementById('nameCheckboxes').style.display = 'grid';
+  setupNameCheckboxHandlers();
+  setupSearchFunctionality();
+  setupAgencyFilter();
+}
+
 function loadEmployeeData() {
-  document.getElementById('loadingNames').style.display = 'block';
-  document.getElementById('nameCheckboxes').style.display = 'none';
+  // Show the cached roster instantly if we have one - it changes rarely, so
+  // this avoids blocking the form on a cold Apps Script round-trip every
+  // time it opens. A fresh copy is still fetched below and swapped in when
+  // it lands. (Same pattern already shipped on production.)
+  let hadCache = false;
+  try {
+    const cached = JSON.parse(localStorage.getItem(EMPLOYEE_CACHE_KEY) || 'null');
+    if (Array.isArray(cached) && cached.length) {
+      renderEmployeeList(cached);
+      hadCache = true;
+    }
+  } catch (e) { /* ignore a malformed cache and just fetch fresh */ }
+
+  if (!hadCache) {
+    document.getElementById('loadingNames').style.display = 'block';
+    document.getElementById('nameCheckboxes').style.display = 'none';
+  }
 
   apiCall('getEmployeeData', { token })
     .then(function (employees) {
       if (employees && employees.error) throw new Error(employees.error);
-      allEmployees = employees;
-      employeeData = employees;
-      generateCheckboxes(employees);
-      document.getElementById('loadingNames').style.display = 'none';
-      document.getElementById('nameCheckboxes').style.display = 'grid';
-      setupNameCheckboxHandlers();
-      setupSearchFunctionality();
-      setupAgencyFilter();
+      if (!Array.isArray(employees)) throw new Error('Unexpected employee data.');
+      localStorage.setItem(EMPLOYEE_CACHE_KEY, JSON.stringify(employees));
+      renderEmployeeList(employees);
     })
     .catch(function (error) {
+      if (hadCache) return; // keep the cached list showing; a background refresh failing isn't worth alarming anyone
       showMessage('Error loading employee data: ' + error.message, 'error');
       document.getElementById('loadingNames').innerHTML = 'Error loading employees. Please refresh the page.';
     });
