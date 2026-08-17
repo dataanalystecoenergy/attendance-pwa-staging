@@ -30,6 +30,22 @@ function authActive() {
   return REQUIRE_LOGIN && !noAuthMode;
 }
 
+// All top-level views the app can be on, kept mutually exclusive here so
+// every screen function just calls showScreen() instead of separately
+// hiding every other screen by hand (which only gets more error-prone as
+// more full pages get added, as opposed to the popups these used to be).
+// Declared this early (not down near showLogin/showHome) because the
+// install-gate flow can call showHome()/showLogin() synchronously at
+// module-load time via initInstallUI() below - a `const` declared any
+// later would still be in its temporal dead zone at that point and throw.
+const ALL_SCREEN_IDS = ['loginScreen', 'homeScreen', 'formContainer', 'leavePage', 'recordsPage', 'documentsPage', 'holidaysPage'];
+function showScreen(id) {
+  ALL_SCREEN_IDS.forEach(sid => {
+    document.getElementById(sid).style.display = sid === id ? 'block' : 'none';
+  });
+  closeDrawer();
+}
+
 // ============================================================
 // API helper — POST with text/plain body to avoid a CORS preflight
 // (Apps Script's doPost doesn't answer OPTIONS requests).
@@ -144,19 +160,14 @@ initInstallUI();
 // Auth — login / logout / session gating
 // ============================================================
 function showLogin() {
-  document.getElementById('loginScreen').style.display = 'block';
-  document.getElementById('homeScreen').style.display = 'none';
-  document.getElementById('formContainer').style.display = 'none';
-  closeDrawer();
+  showScreen('loginScreen');
 }
 
 // Shown right after login (or immediately if already standalone+logged in) -
 // the attendance form itself is now a secondary view reached via the
 // "Time In / Time Out" button or the drawer, not the first thing shown.
 function showHome() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('formContainer').style.display = 'none';
-  document.getElementById('homeScreen').style.display = 'block';
+  showScreen('homeScreen');
   document.getElementById('drawerName').textContent = employee ? employee.fullName : '';
 
   const nameParts = employee && employee.fullName ? employee.fullName.split(',') : [];
@@ -178,9 +189,7 @@ function showHome() {
 // no reason to pay that cost just for someone browsing Home.
 let attendanceFormInitialized = false;
 function showAttendanceForm() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('homeScreen').style.display = 'none';
-  document.getElementById('formContainer').style.display = 'block';
+  showScreen('formContainer');
   document.getElementById('submitterEmailGroup').style.display = authActive() ? 'none' : 'block';
   document.getElementById('gpsScopeNote').textContent = authActive()
     ? 'GPS is verified for you (the logged-in submitter) only — not individually for every name checked below.'
@@ -294,6 +303,17 @@ function closeDrawer() {
 
 document.getElementById('hamburgerBtn').addEventListener('click', openDrawer);
 document.getElementById('navDrawerBackdrop').addEventListener('click', closeDrawer);
+
+// Shared by every sub-page's topbar (Leave, Daily Time Record, Documents,
+// PH Holidays) - one hamburger-opens-drawer / one-tap-back-to-Home pair,
+// same as Home's own topbar, so all of these read as peer sections of one
+// app rather than one-off popups.
+document.querySelectorAll('.page-hamburger-btn').forEach((btn) => {
+  btn.addEventListener('click', openDrawer);
+});
+document.querySelectorAll('.page-back-btn').forEach((btn) => {
+  btn.addEventListener('click', showHome);
+});
 document.getElementById('drawerLogoutBtn').addEventListener('click', () => {
   closeDrawer();
   logout();
@@ -318,13 +338,13 @@ document.querySelectorAll('.nav-item[data-nav]').forEach((btn) => {
     if (nav === 'home') {
       showHome();
     } else if (nav === 'leave') {
-      openLeaveModal();
+      openLeavePage();
     } else if (nav === 'records') {
-      openRecordsModal();
+      openRecordsPage();
     } else if (nav === 'documents') {
-      openDocumentsModal();
+      openDocumentsPage();
     } else if (nav === 'calendar') {
-      openHolidaysModal();
+      openHolidaysPage();
     } else if (NAV_COMING_SOON_LABELS[nav]) {
       showToast(`${NAV_COMING_SOON_LABELS[nav]} isn't built yet — coming soon.`);
     }
@@ -428,7 +448,8 @@ function isInstallerPosition(position) {
   return p === 'installer' || p.includes('electrician');
 }
 
-function openLeaveModal() {
+function openLeavePage() {
+  showScreen('leavePage');
   document.getElementById('leaveName').value = employee.fullName || '';
   document.getElementById('leaveAgency').value = employee.agency || '';
 
@@ -441,17 +462,7 @@ function openLeaveModal() {
   document.getElementById('leaveEngineer').required = isInstaller;
 
   document.getElementById('leaveStatus').style.display = 'none';
-  document.getElementById('leaveModal').style.display = 'flex';
 }
-
-function closeLeaveModal() {
-  document.getElementById('leaveModal').style.display = 'none';
-}
-
-document.getElementById('leaveCloseBtn').addEventListener('click', closeLeaveModal);
-document.getElementById('leaveModal').addEventListener('click', (e) => {
-  if (e.target.id === 'leaveModal') closeLeaveModal(); // click on the dim backdrop
-});
 
 // ============================================================
 // Documents — employees upload their own SSS/Pag-IBIG/PhilHealth/TIN once
@@ -463,20 +474,11 @@ document.getElementById('leaveModal').addEventListener('click', (e) => {
 const DOCUMENT_TYPES = ['SSS', 'Pag-IBIG', 'PhilHealth', 'TIN'];
 let pendingUploadType = null;
 
-function openDocumentsModal() {
+function openDocumentsPage() {
+  showScreen('documentsPage');
   document.getElementById('documentsStatus').style.display = 'none';
-  document.getElementById('documentsModal').style.display = 'flex';
   loadMyDocuments();
 }
-
-function closeDocumentsModal() {
-  document.getElementById('documentsModal').style.display = 'none';
-}
-
-document.getElementById('documentsCloseBtn').addEventListener('click', closeDocumentsModal);
-document.getElementById('documentsModal').addEventListener('click', (e) => {
-  if (e.target.id === 'documentsModal') closeDocumentsModal(); // click on the dim backdrop
-});
 
 async function loadMyDocuments() {
   const el = document.getElementById('documentsList');
@@ -628,8 +630,8 @@ function changeHolidayCalendarMonth(delta) {
   renderHolidayCalendar();
 }
 
-async function openHolidaysModal() {
-  document.getElementById('holidaysModal').style.display = 'flex';
+async function openHolidaysPage() {
+  showScreen('holidaysPage');
   document.getElementById('holidaysStatus').style.display = 'none';
 
   if (!holidaysData) {
@@ -655,14 +657,6 @@ async function openHolidaysModal() {
   }
 }
 
-function closeHolidaysModal() {
-  document.getElementById('holidaysModal').style.display = 'none';
-}
-
-document.getElementById('holidaysCloseBtn').addEventListener('click', closeHolidaysModal);
-document.getElementById('holidaysModal').addEventListener('click', (e) => {
-  if (e.target.id === 'holidaysModal') closeHolidaysModal(); // click on the dim backdrop
-});
 document.getElementById('holidayCalendarPrevBtn').addEventListener('click', () => changeHolidayCalendarMonth(-1));
 document.getElementById('holidayCalendarNextBtn').addEventListener('click', () => changeHolidayCalendarMonth(1));
 
@@ -703,7 +697,7 @@ document.getElementById('leaveForm').addEventListener('submit', async function (
       document.getElementById('leaveForm').reset();
       document.getElementById('leaveProjectGroup').style.display = 'none';
       document.getElementById('leaveEngineerGroup').style.display = 'none';
-      setTimeout(closeLeaveModal, 2000);
+      setTimeout(showHome, 2000);
     } else {
       statusDiv.className = 'status-message error';
       statusDiv.textContent = result.error || 'Submission failed.';
@@ -790,8 +784,8 @@ function changeCalendarMonth(delta) {
   renderCalendar();
 }
 
-async function openRecordsModal() {
-  document.getElementById('recordsModal').style.display = 'flex';
+async function openRecordsPage() {
+  showScreen('recordsPage');
   document.getElementById('recordsStatus').style.display = 'none';
 
   if (!myRecordsData) {
@@ -817,14 +811,6 @@ async function openRecordsModal() {
   }
 }
 
-function closeRecordsModal() {
-  document.getElementById('recordsModal').style.display = 'none';
-}
-
-document.getElementById('recordsCloseBtn').addEventListener('click', closeRecordsModal);
-document.getElementById('recordsModal').addEventListener('click', (e) => {
-  if (e.target.id === 'recordsModal') closeRecordsModal();
-});
 document.getElementById('calendarPrevBtn').addEventListener('click', () => changeCalendarMonth(-1));
 document.getElementById('calendarNextBtn').addEventListener('click', () => changeCalendarMonth(1));
 

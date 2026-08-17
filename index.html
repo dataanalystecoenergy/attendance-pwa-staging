@@ -297,13 +297,13 @@
     <!-- Read-only against both the Attendance system's Combined Attendances
          sheet and the Leave Application system's Form Responses 1 - never
          writes to either. -->
-    <div id="recordsModal" class="leave-overlay" style="display:none;">
-        <div class="leave-overlay-card">
-            <div class="leave-overlay-header">
-                <h2>📅 My Attendance &amp; Leave</h2>
-                <button type="button" id="recordsCloseBtn" class="install-overlay-close">✕</button>
-            </div>
-
+    <div id="recordsPage" style="display:none;">
+        <div class="home-topbar">
+            <button type="button" class="hamburger-btn page-hamburger-btn" aria-label="Open menu">☰</button>
+            <div class="home-topbar-title">Daily Time Record</div>
+            <button type="button" class="home-topbar-action page-back-btn">‹ Home</button>
+        </div>
+        <div class="form-container">
             <div id="recordsStatus" class="status-message"></div>
 
             <div class="calendar-nav">
@@ -331,13 +331,13 @@
          spreadsheet (via a new API action that appends a row the same way
          its own submitLeaveApplication() already does) - that system's own
          approval workflow, tracking page, and deployment are untouched. -->
-    <div id="leaveModal" class="leave-overlay" style="display:none;">
-        <div class="leave-overlay-card">
-            <div class="leave-overlay-header">
-                <h2>📝 Apply for a Leave</h2>
-                <button type="button" id="leaveCloseBtn" class="install-overlay-close">✕</button>
-            </div>
-
+    <div id="leavePage" style="display:none;">
+        <div class="home-topbar">
+            <button type="button" class="hamburger-btn page-hamburger-btn" aria-label="Open menu">☰</button>
+            <div class="home-topbar-title">Leave Application</div>
+            <button type="button" class="home-topbar-action page-back-btn">‹ Home</button>
+        </div>
+        <div class="form-container">
             <div id="leaveStatus" class="status-message"></div>
 
             <form id="leaveForm">
@@ -441,13 +441,13 @@
          separate from every other system this app touches. One-time only
          by design: once a type shows as uploaded, re-uploading is blocked
          (contact HR directly to have one replaced). -->
-    <div id="documentsModal" class="leave-overlay" style="display:none;">
-        <div class="leave-overlay-card">
-            <div class="leave-overlay-header">
-                <h2>📄 Documents</h2>
-                <button type="button" id="documentsCloseBtn" class="install-overlay-close">✕</button>
-            </div>
-
+    <div id="documentsPage" style="display:none;">
+        <div class="home-topbar">
+            <button type="button" class="hamburger-btn page-hamburger-btn" aria-label="Open menu">☰</button>
+            <div class="home-topbar-title">Documents</div>
+            <button type="button" class="home-topbar-action page-back-btn">‹ Home</button>
+        </div>
+        <div class="form-container">
             <div id="documentsStatus" class="status-message"></div>
 
             <div id="documentsList" class="documents-list">
@@ -462,13 +462,13 @@
     <!-- Read-only list for employees - the underlying Holidays sheet is
          editable directly (same pattern as Announcements), not through any
          in-app admin UI. -->
-    <div id="holidaysModal" class="leave-overlay" style="display:none;">
-        <div class="leave-overlay-card">
-            <div class="leave-overlay-header">
-                <h2>📅 PH Holidays</h2>
-                <button type="button" id="holidaysCloseBtn" class="install-overlay-close">✕</button>
-            </div>
-
+    <div id="holidaysPage" style="display:none;">
+        <div class="home-topbar">
+            <button type="button" class="hamburger-btn page-hamburger-btn" aria-label="Open menu">☰</button>
+            <div class="home-topbar-title">PH Holidays</div>
+            <button type="button" class="home-topbar-action page-back-btn">‹ Home</button>
+        </div>
+        <div class="form-container">
             <div id="holidaysStatus" class="status-message"></div>
 
             <div class="calendar-nav">
