@@ -186,6 +186,14 @@ function showAttendanceForm() {
     ? 'GPS is verified for you (the logged-in submitter) only — not individually for every name checked below.'
     : 'GPS is captured with this submission but not tied to a verified account while login is switched off — not individually for every name checked below.';
 
+  // No verified session (reached via the login screen's Time In/Out
+  // shortcut) - show the same Log In / Time In/Out tabs as that screen
+  // instead of "Back to Home" (there's no Home to go back to yet), so this
+  // reads as the same card continuing rather than a jump to a separate page.
+  const hasSession = !!employee;
+  document.getElementById('formModeToggle').style.display = hasSession ? 'none' : 'flex';
+  document.getElementById('backToHomeBtn').style.display = hasSession ? 'block' : 'none';
+
   if (!attendanceFormInitialized) {
     attendanceFormInitialized = true;
     initAttendanceForm();
@@ -207,6 +215,14 @@ document.getElementById('loginModeLoginBtn').addEventListener('click', () => {
   showLogin();
 });
 document.getElementById('loginModeNoAuthBtn').addEventListener('click', () => {
+  noAuthMode = true;
+  showAttendanceForm();
+});
+document.getElementById('formModeLoginBtn').addEventListener('click', () => {
+  noAuthMode = false;
+  showLogin();
+});
+document.getElementById('formModeNoAuthBtn').addEventListener('click', () => {
   noAuthMode = true;
   showAttendanceForm();
 });

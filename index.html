@@ -133,6 +133,14 @@
 
     <!-- ================= ATTENDANCE FORM (shown after login) ================= -->
     <div class="form-container" id="formContainer" style="display:none;">
+        <!-- Shown instead of Back to Home when reached via the login screen's
+             "Time In/Out" shortcut (no session to go "home" to) - same tab
+             pair as the login screen, so switching between the two feels
+             like one continuous card, not a jump to a separate page. -->
+        <div class="purpose-toggle" id="formModeToggle" style="display:none; margin-bottom:14px;">
+            <button type="button" class="purpose-btn" id="formModeLoginBtn" data-mode="login">Log In</button>
+            <button type="button" class="purpose-btn selected" id="formModeNoAuthBtn" data-mode="noauth">⏱️ Time In/Out</button>
+        </div>
         <button type="button" id="backToHomeBtn" class="back-to-home-btn">‹ Back to Home</button>
         <div id="statusMessage" class="status-message"></div>
         <form id="attendanceForm">
