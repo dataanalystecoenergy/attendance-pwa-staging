@@ -1090,71 +1090,76 @@ textarea {
     overflow-y: auto;
 }
 
-/* Card layout modeled on the other viewer tool's own admin cards: full-size
-   photo up top, an identifier badge, then every field shown as a label +
-   a boxed value, stacked single-column (that tool shows these 3-across in
-   a desktop grid; ours stays one-per-row since this is the same mobile
-   app as everything else here). */
-.admin-attendance-card {
-    background: var(--card-bg);
-    border: 1px solid var(--panel-border);
-    border-radius: 12px;
-    padding: 14px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-
-.admin-card-photo {
-    display: block;
-    width: 100%;
-    max-height: 260px;
-    object-fit: cover;
-    border-radius: 8px;
-    background: var(--panel-bg-hover);
-    border: 1px solid var(--panel-border);
-}
-
-.admin-card-photo-empty {
-    height: 120px;
+.admin-attendance-row {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--muted);
-    font-size: 0.9rem;
-}
-
-.admin-card-id-badge {
-    display: inline-block;
-    margin: 10px 0 6px;
-    background: var(--navy);
-    color: white;
-    font-size: 0.78rem;
-    font-weight: 700;
-    border-radius: 12px;
-    padding: 4px 12px;
-}
-
-.admin-field-label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin: 10px 0 3px;
-}
-
-.admin-field-box {
+    align-items: flex-start;
+    gap: 12px;
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: 8px;
-    padding: 9px 11px;
-    font-size: 0.88rem;
-    color: var(--ink);
-    word-break: break-word;
+    padding: 10px 12px;
 }
 
-.admin-edit-btn-full {
-    width: 100%;
-    margin-top: 14px;
+.admin-attendance-thumb-link {
+    flex-shrink: 0;
+    display: block;
+}
+
+.admin-attendance-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--panel-bg-hover);
+    border: 1px solid var(--panel-border);
+    flex-shrink: 0;
+}
+
+.admin-attendance-thumb-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--muted);
+}
+
+.admin-attendance-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-attendance-time {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.admin-attendance-name {
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 0.9rem;
+    margin-top: 1px;
+}
+
+.admin-attendance-meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.admin-attendance-address {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 3px;
+    line-height: 1.35;
+}
+
+.admin-attendance-actions {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
 }
 
 .admin-purpose-badge {
@@ -1237,8 +1242,11 @@ textarea {
 .admin-correct-form {
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
-    border-radius: 10px;
-    padding: 12px;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 10px 12px 12px;
+    margin-top: -8px;
+    margin-bottom: 8px;
 }
 
 .admin-correct-form .form-group {

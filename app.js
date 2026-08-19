@@ -583,28 +583,6 @@ function fromDatetimeLocalValue_(value) {
   return `${mm}/${dd}/${yyyy} ${hh}:${min}:00`;
 }
 
-// "08/19/2026 08:15:32" -> "8/19/2026, 8:15:32 AM" (friendlier display, matches
-// the reference viewer's card layout).
-function formatAdminTimestampDisplay_(ts) {
-  const m = String(ts || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})/);
-  if (!m) return ts || '';
-  const [, mm, dd, yyyy, hh, min, ss] = m;
-  const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min), Number(ss));
-  if (isNaN(d.getTime())) return ts;
-  return d.toLocaleString('en-US', {
-    month: 'numeric', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true,
-  });
-}
-
-// "2026-08-19" -> "8/19/2026"
-function formatAdminDateDisplay_(iso) {
-  const m = String(iso || '').match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return iso || '';
-  const [, yyyy, mm, dd] = m;
-  return `${Number(mm)}/${Number(dd)}/${yyyy}`;
-}
-
 function renderAdminAttendance() {
   const el = document.getElementById('adminAttendanceList');
   const filterTerm = document.getElementById('adminAttendanceNameFilter').value.toLowerCase().trim();
@@ -618,44 +596,26 @@ function renderAdminAttendance() {
   }
 
   el.innerHTML = adminAttendanceFiltered.map((e, idx) => {
+    const timeLabel = (String(e.timestamp || '').match(/(\d{1,2}:\d{2}:\d{2})/) || [])[1] || e.timestamp;
     const purposeClass = e.purpose === 'Time In' ? 'admin-purpose-in' : 'admin-purpose-out';
-    const photo = e.thumbnailUrl
-      ? `<a href="${e.imageUrl}" target="_blank" rel="noopener">
-           <img src="${e.thumbnailUrl}" alt="Attendance photo" class="admin-card-photo" loading="lazy">
+    const thumb = e.thumbnailUrl
+      ? `<a href="${e.imageUrl}" target="_blank" rel="noopener" class="admin-attendance-thumb-link">
+           <img src="${e.thumbnailUrl}" alt="Attendance photo" class="admin-attendance-thumb" loading="lazy">
          </a>`
-      : `<div class="admin-card-photo admin-card-photo-empty">📷 No photo</div>`;
+      : `<div class="admin-attendance-thumb admin-attendance-thumb-empty">📷</div>`;
     return `
-      <div class="admin-attendance-card">
-        ${photo}
-        <div class="admin-card-id-badge">${escapeHtml_(e.identifier)}</div>
-
-        <div class="admin-field-label">Timestamp</div>
-        <div class="admin-field-box">${escapeHtml_(formatAdminTimestampDisplay_(e.timestamp))}</div>
-
-        <div class="admin-field-label">Date of Deployment</div>
-        <div class="admin-field-box">${escapeHtml_(formatAdminDateDisplay_(e.deploymentDate))}</div>
-
-        <div class="admin-field-label">Name</div>
-        <div class="admin-field-box">${escapeHtml_(e.name)}</div>
-
-        <div class="admin-field-label">Site Name</div>
-        <div class="admin-field-box">${escapeHtml_(e.siteName)}</div>
-
-        <div class="admin-field-label">Agency</div>
-        <div class="admin-field-box">${escapeHtml_(e.agency)}</div>
-
-        <div class="admin-field-label">Purpose</div>
-        <div class="admin-field-box"><span class="admin-purpose-badge ${purposeClass}">${e.purpose || ''}</span></div>
-
-        <div class="admin-field-label">Remarks</div>
-        <div class="admin-field-box">${escapeHtml_(e.remarks) || ' '}</div>
-
-        ${e.address ? `
-          <div class="admin-field-label">Address</div>
-          <div class="admin-field-box">📍 ${escapeHtml_(e.address)}</div>
-        ` : ''}
-
-        <button type="button" class="control-btn admin-edit-btn admin-edit-btn-full" data-idx="${idx}">✏️ Correct this entry</button>
+      <div class="admin-attendance-row">
+        ${thumb}
+        <div class="admin-attendance-info">
+          <div class="admin-attendance-time">${timeLabel}</div>
+          <div class="admin-attendance-name">${escapeHtml_(e.name)}</div>
+          <div class="admin-attendance-meta">${escapeHtml_(e.siteName)}${e.agency ? ' · ' + escapeHtml_(e.agency) : ''}</div>
+          ${e.address ? `<div class="admin-attendance-address">📍 ${escapeHtml_(e.address)}</div>` : ''}
+        </div>
+        <div class="admin-attendance-actions">
+          <span class="admin-purpose-badge ${purposeClass}">${e.purpose || ''}</span>
+          <button type="button" class="admin-edit-btn" data-idx="${idx}" title="Correct this entry">✏️</button>
+        </div>
       </div>
       <div class="admin-correct-form" id="adminCorrectForm-${idx}" style="display:none;">
         <div class="form-group">
@@ -676,10 +636,6 @@ function renderAdminAttendance() {
         <div class="form-group">
           <label>Time</label>
           <input type="datetime-local" class="admin-correct-timestamp" value="${toDatetimeLocalValue_(e.timestamp)}">
-        </div>
-        <div class="form-group">
-          <label>Remarks</label>
-          <input type="text" class="admin-correct-remarks" value="${escapeHtml_(e.remarks)}">
         </div>
         <div class="form-group">
           <label>Reason for correction <span class="required">*</span></label>
@@ -722,7 +678,6 @@ document.getElementById('adminAttendanceList').addEventListener('click', async (
     const siteName = form.querySelector('.admin-correct-site').value.trim();
     const deploymentDate = form.querySelector('.admin-correct-deployment-date').value;
     const timestampLocal = form.querySelector('.admin-correct-timestamp').value;
-    const remarks = form.querySelector('.admin-correct-remarks').value.trim();
     const reason = form.querySelector('.admin-correct-reason').value.trim();
     const statusEl = form.querySelector('.admin-correct-status');
 
@@ -747,7 +702,7 @@ document.getElementById('adminAttendanceList').addEventListener('click', async (
     try {
       const result = await apiCall('adminCorrectAttendance', {
         token,
-        data: { identifier: entry.identifier, purpose, siteName, deploymentDate, timestamp: timestampLocal, remarks, reason },
+        data: { identifier: entry.identifier, purpose, siteName, deploymentDate, timestamp: timestampLocal, reason },
       });
       if (!result.success) throw new Error(result.error || 'Correction failed.');
 
@@ -755,10 +710,10 @@ document.getElementById('adminAttendanceList').addEventListener('click', async (
       // cached list (same object reference isn't guaranteed after a
       // filter, so update the source list by identifier too).
       const newTimestamp = fromDatetimeLocalValue_(timestampLocal);
-      Object.assign(entry, { purpose, siteName, deploymentDate, timestamp: newTimestamp, remarks });
+      Object.assign(entry, { purpose, siteName, deploymentDate, timestamp: newTimestamp });
       const sourceEntry = (adminAttendanceEntries || []).find(x => x.identifier === entry.identifier);
       if (sourceEntry) {
-        Object.assign(sourceEntry, { purpose, siteName, deploymentDate, timestamp: newTimestamp, remarks });
+        Object.assign(sourceEntry, { purpose, siteName, deploymentDate, timestamp: newTimestamp });
       }
 
       renderAdminAttendance();
