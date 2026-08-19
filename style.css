@@ -1,29 +1,24 @@
 ﻿:root {
-    /* Gray + "dirty white" palette. Variable names (--navy-*, --gold-*,
-       --accent-blue) are kept as-is even though they no longer literally
-       mean navy/gold/blue - renaming them would mean touching every one
-       of the ~26 places that reference them, for a purely cosmetic gain. */
-    --navy-deep: #1c1c1c;
-    --navy: #3d3d3d;
-    --navy-light: #6e6e6e;
-    --gold: #8f8878;
-    --gold-dark: #6f6a5c;
-    --ink: #2b2b2b;
-    --muted: #7d7d7d;
-    --line: #e3ded4;
+    --navy-deep: #041c40;
+    --navy: #03346E;
+    --navy-light: #10499b;
+    --gold: #f5a623;
+    --gold-dark: #d9820a;
+    --ink: #22303f;
+    --muted: #6b7a8d;
+    --line: #e6e9ee;
 
-    --card-bg: #f3f0ea;
-    --page-bg: #e9e4da;
+    --card-bg: #ffffff;
     --label-text: #333333;
     --heading-color: var(--navy);
-    --input-bg: #faf8f3;
-    --input-border: #d9d3c7;
-    --panel-bg: #ece7de;
-    --panel-bg-hover: #ddd6c9;
-    --panel-border: #d1c9ba;
-    --overlay-card-bg: #f3f0ea;
+    --input-bg: #ffffff;
+    --input-border: #e2e2e2;
+    --panel-bg: #fafafa;
+    --panel-bg-hover: #e0e0e0;
+    --panel-border: #dddddd;
+    --overlay-card-bg: #ffffff;
 
-    --accent-blue: #5c584d;
+    --accent-blue: #2f6fed;
 
     --success-bg: #e5f6ea;
     --success-text: #1e7a37;
@@ -41,27 +36,25 @@
 
 /* Follows the phone/browser's system light-or-dark setting - the logo is a
    transparent PNG (white wordmark) that only reads on a dark backdrop, so
-   the header stays dark gray in both themes; only the card content below
+   the header stays dark navy in both themes; only the card content below
    switches. Overriding --navy-light here also re-tints every button/focus
    ring/gradient that already references it, without needing per-selector
    dark rules for each one. */
 @media (prefers-color-scheme: dark) {
     :root {
-        --card-bg: #232323;
-        /* --page-bg deliberately NOT overridden here - kept dirty white
-           even in system dark mode, per explicit request. */
-        --label-text: #ded9d0;
-        --heading-color: #b8b2a4;
-        --ink: #eae6de;
-        --muted: #a39d90;
-        --line: #3a3a3a;
-        --navy-light: #8a8a8a;
-        --input-bg: #2a2a2a;
-        --input-border: #454540;
-        --panel-bg: #262622;
-        --panel-bg-hover: #333029;
-        --panel-border: #3d3a33;
-        --overlay-card-bg: #232323;
+        --card-bg: #16232f;
+        --label-text: #d7dee6;
+        --heading-color: #6fa8f0;
+        --ink: #e8edf2;
+        --muted: #93a4b6;
+        --line: #2c3e50;
+        --navy-light: #3d7fd6;
+        --input-bg: #1e2e3d;
+        --input-border: #38495c;
+        --panel-bg: #1b2937;
+        --panel-bg-hover: #24374a;
+        --panel-border: #34465a;
+        --overlay-card-bg: #16232f;
 
         --success-bg: #16321f;
         --success-text: #7fd99a;
@@ -76,7 +69,7 @@
         --notice-text: #f0cd7a;
         --notice-border: #6b5419;
 
-        --accent-blue: #a39d90;
+        --accent-blue: #5b8def;
     }
 }
 
@@ -89,7 +82,7 @@ body {
     max-width: 800px;
     margin: 0 auto;
     padding: 10px;
-    background: var(--page-bg);
+    background: radial-gradient(1100px 600px at 50% -8%, var(--navy-light) 0%, var(--navy) 45%, var(--navy-deep) 100%);
     background-attachment: fixed;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
@@ -102,18 +95,8 @@ button, input, textarea, select {
 
 .logo-container {
     text-align: center;
-    animation: fade-in-down 0.5s ease both;
-    /* The logo's wordmark is a white PNG, only legible on a dark backdrop -
-       now that the page itself is light (dirty white), this needs its own
-       dark band instead of relying on body's background behind it.
-       Full-bleed via the viewport-relative trick (not a fixed negative
-       margin) since body's own padding varies across breakpoints. */
-    width: 100vw;
-    margin-left: calc(-50vw + 50%);
-    margin-right: calc(-50vw + 50%);
     margin-bottom: 20px;
-    padding: 18px 10px;
-    background: linear-gradient(135deg, var(--navy-light), var(--navy) 60%, var(--navy-deep));
+    animation: fade-in-down 0.5s ease both;
 }
 
 .logo-container img {
@@ -226,7 +209,7 @@ button, input, textarea, select {
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(28,28,28,0.35);
+    box-shadow: 0 4px 14px rgba(3,52,110,0.35);
     transition: filter 0.12s ease, transform 0.12s ease;
 }
 
@@ -404,12 +387,12 @@ button, input, textarea, select {
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(111,106,92,0.35);
+    box-shadow: 0 4px 14px rgba(232,134,11,0.35);
 }
 
 .records-btn {
     background: linear-gradient(135deg, var(--navy-light), var(--navy));
-    box-shadow: 0 4px 14px rgba(28,28,28,0.35);
+    box-shadow: 0 4px 14px rgba(3,52,110,0.35);
 }
 
 .calendar-nav {
@@ -504,7 +487,7 @@ button, input, textarea, select {
     background: var(--card-bg);
     padding: 20px;
     border-radius: 14px;
-    box-shadow: 0 12px 32px rgba(28,28,28,0.25), 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 12px 32px rgba(3,52,110,0.25), 0 2px 8px rgba(0,0,0,0.06);
     animation: fade-in-up 0.4s ease both;
     animation-delay: 0.08s;
 }
@@ -609,7 +592,7 @@ textarea {
     cursor: pointer;
     width: 100%;
     margin-top: 20px;
-    box-shadow: 0 4px 14px rgba(111,106,92,0.35);
+    box-shadow: 0 4px 14px rgba(232,134,11,0.35);
     transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
 
@@ -643,7 +626,7 @@ textarea {
     border-color: var(--gold-dark);
     background: linear-gradient(135deg, var(--gold), var(--gold-dark));
     color: white;
-    box-shadow: 0 3px 10px rgba(111,106,92,0.3);
+    box-shadow: 0 3px 10px rgba(232,134,11,0.3);
 }
 
 #agencyToggle .agency-btn {
@@ -653,7 +636,7 @@ textarea {
 
 .submit-btn:hover {
     filter: brightness(1.06);
-    box-shadow: 0 6px 18px rgba(111,106,92,0.45);
+    box-shadow: 0 6px 18px rgba(232,134,11,0.45);
 }
 
 .submit-btn:disabled {
@@ -881,11 +864,6 @@ textarea {
     max-width: 500px;
     margin: 0 auto 16px;
     color: white;
-    /* Its own dark band, same reasoning as .logo-container - white text/
-       icons here need a dark backdrop, and the page itself is light now. */
-    background: linear-gradient(135deg, var(--navy-light), var(--navy));
-    border-radius: 12px;
-    padding: 10px 12px;
 }
 
 .hamburger-btn {
