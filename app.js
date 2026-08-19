@@ -250,6 +250,65 @@ function logout() {
   showLogin();
 }
 
+// ============================================================
+// Auto-logout after 15 minutes of inactivity - user activity (taps,
+// scrolls, typing) resets the clock; a real logged-in session that goes
+// quiet for that long gets logged out automatically. Only applies to an
+// actual logged-in session (authActive() && employee) - there's no login
+// to expire while browsing via the Time In/Out no-auth shortcut.
+//
+// Tracks the last-activity timestamp in localStorage, not just an
+// in-memory timer, so closing/backgrounding the app and reopening it after
+// being away 20+ minutes logs out immediately on reopen instead of quietly
+// granting a fresh 15 minutes just because the page reloaded.
+// ============================================================
+const INACTIVITY_LIMIT_MS = 15 * 60 * 1000;
+const LAST_ACTIVITY_KEY = 'attendance_last_activity';
+let inactivityTimer = null;
+
+function hasActiveSession_() {
+  return authActive() && !!employee;
+}
+
+function recordActivity_() {
+  if (!hasActiveSession_()) return;
+  localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+  resetInactivityTimer_();
+}
+
+function resetInactivityTimer_() {
+  clearTimeout(inactivityTimer);
+  if (!hasActiveSession_()) return;
+  inactivityTimer = setTimeout(handleInactivityTimeout_, INACTIVITY_LIMIT_MS);
+}
+
+function handleInactivityTimeout_() {
+  if (!hasActiveSession_()) return;
+  logout();
+  showToast("You've been logged out after 15 minutes of inactivity.");
+}
+
+['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach((evt) => {
+  document.addEventListener(evt, recordActivity_, { passive: true });
+});
+
+// Runs once at load - catches a session that was already inactive too long
+// before this page load even happened (app backgrounded or fully closed).
+// Deferred via setTimeout(..., 0) so it runs after the rest of the script
+// finishes its initial top-to-bottom pass: logout() touches state (like
+// myRecordsData) declared further down the file, which would still be in
+// its temporal dead zone if this ran synchronously from here.
+setTimeout(() => {
+  if (!hasActiveSession_()) return;
+  const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || 0);
+  if (lastActivity && Date.now() - lastActivity > INACTIVITY_LIMIT_MS) {
+    logout();
+    showToast("You've been logged out after 15 minutes of inactivity.");
+  } else {
+    recordActivity_();
+  }
+}, 0);
+
 document.getElementById('loginForm').addEventListener('submit', async function (e) {
   e.preventDefault();
   const email = document.getElementById('loginEmail').value.trim();
