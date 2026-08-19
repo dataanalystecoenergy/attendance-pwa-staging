@@ -598,15 +598,24 @@ function renderAdminAttendance() {
   el.innerHTML = adminAttendanceFiltered.map((e, idx) => {
     const timeLabel = (String(e.timestamp || '').match(/(\d{1,2}:\d{2}:\d{2})/) || [])[1] || e.timestamp;
     const purposeClass = e.purpose === 'Time In' ? 'admin-purpose-in' : 'admin-purpose-out';
+    const thumb = e.thumbnailUrl
+      ? `<a href="${e.imageUrl}" target="_blank" rel="noopener" class="admin-attendance-thumb-link">
+           <img src="${e.thumbnailUrl}" alt="Attendance photo" class="admin-attendance-thumb" loading="lazy">
+         </a>`
+      : `<div class="admin-attendance-thumb admin-attendance-thumb-empty">📷</div>`;
     return `
       <div class="admin-attendance-row">
-        <div class="admin-attendance-time">${timeLabel}</div>
+        ${thumb}
         <div class="admin-attendance-info">
+          <div class="admin-attendance-time">${timeLabel}</div>
           <div class="admin-attendance-name">${escapeHtml_(e.name)}</div>
           <div class="admin-attendance-meta">${escapeHtml_(e.siteName)}${e.agency ? ' · ' + escapeHtml_(e.agency) : ''}</div>
+          ${e.address ? `<div class="admin-attendance-address">📍 ${escapeHtml_(e.address)}</div>` : ''}
         </div>
-        <span class="admin-purpose-badge ${purposeClass}">${e.purpose || ''}</span>
-        <button type="button" class="admin-edit-btn" data-idx="${idx}" title="Correct this entry">✏️</button>
+        <div class="admin-attendance-actions">
+          <span class="admin-purpose-badge ${purposeClass}">${e.purpose || ''}</span>
+          <button type="button" class="admin-edit-btn" data-idx="${idx}" title="Correct this entry">✏️</button>
+        </div>
       </div>
       <div class="admin-correct-form" id="adminCorrectForm-${idx}" style="display:none;">
         <div class="form-group">

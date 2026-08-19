@@ -1092,7 +1092,7 @@ textarea {
 
 .admin-attendance-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
@@ -1100,10 +1100,36 @@ textarea {
     padding: 10px 12px;
 }
 
-.admin-attendance-time {
+.admin-attendance-thumb-link {
     flex-shrink: 0;
-    width: 66px;
-    font-size: 0.8rem;
+    display: block;
+}
+
+.admin-attendance-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--panel-bg-hover);
+    border: 1px solid var(--panel-border);
+    flex-shrink: 0;
+}
+
+.admin-attendance-thumb-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--muted);
+}
+
+.admin-attendance-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-attendance-time {
+    font-size: 0.78rem;
     font-weight: 700;
     color: var(--muted);
 }
@@ -1112,6 +1138,7 @@ textarea {
     font-weight: 700;
     color: var(--ink);
     font-size: 0.9rem;
+    margin-top: 1px;
 }
 
 .admin-attendance-meta {
@@ -1120,12 +1147,28 @@ textarea {
     margin-top: 2px;
 }
 
+.admin-attendance-address {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 3px;
+    line-height: 1.35;
+}
+
+.admin-attendance-actions {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
 .admin-purpose-badge {
     flex-shrink: 0;
     font-size: 0.72rem;
     font-weight: 700;
     border-radius: 10px;
     padding: 3px 9px;
+    white-space: nowrap;
 }
 
 .admin-purpose-in { background: var(--success-bg); color: var(--success-text); }
