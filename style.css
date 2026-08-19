@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     /* Gray + "dirty white" palette. Variable names (--navy-*, --gold-*,
        --accent-blue) are kept as-is even though they no longer literally
        mean navy/gold/blue - renaming them would mean touching every one
@@ -13,6 +13,7 @@
     --line: #e3ded4;
 
     --card-bg: #f3f0ea;
+    --page-bg: #e9e4da;
     --label-text: #333333;
     --heading-color: var(--navy);
     --input-bg: #faf8f3;
@@ -47,6 +48,7 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --card-bg: #232323;
+        --page-bg: #141414;
         --label-text: #ded9d0;
         --heading-color: #b8b2a4;
         --ink: #eae6de;
@@ -86,7 +88,7 @@ body {
     max-width: 800px;
     margin: 0 auto;
     padding: 10px;
-    background: radial-gradient(1100px 600px at 50% -8%, var(--navy-light) 0%, var(--navy) 45%, var(--navy-deep) 100%);
+    background: var(--page-bg);
     background-attachment: fixed;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
@@ -99,8 +101,18 @@ button, input, textarea, select {
 
 .logo-container {
     text-align: center;
-    margin-bottom: 20px;
     animation: fade-in-down 0.5s ease both;
+    /* The logo's wordmark is a white PNG, only legible on a dark backdrop -
+       now that the page itself is light (dirty white), this needs its own
+       dark band instead of relying on body's background behind it.
+       Full-bleed via the viewport-relative trick (not a fixed negative
+       margin) since body's own padding varies across breakpoints. */
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    margin-bottom: 20px;
+    padding: 18px 10px;
+    background: linear-gradient(135deg, var(--navy-light), var(--navy) 60%, var(--navy-deep));
 }
 
 .logo-container img {
@@ -213,7 +225,7 @@ button, input, textarea, select {
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(3,52,110,0.35);
+    box-shadow: 0 4px 14px rgba(28,28,28,0.35);
     transition: filter 0.12s ease, transform 0.12s ease;
 }
 
@@ -391,12 +403,12 @@ button, input, textarea, select {
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(232,134,11,0.35);
+    box-shadow: 0 4px 14px rgba(111,106,92,0.35);
 }
 
 .records-btn {
     background: linear-gradient(135deg, var(--navy-light), var(--navy));
-    box-shadow: 0 4px 14px rgba(3,52,110,0.35);
+    box-shadow: 0 4px 14px rgba(28,28,28,0.35);
 }
 
 .calendar-nav {
@@ -491,7 +503,7 @@ button, input, textarea, select {
     background: var(--card-bg);
     padding: 20px;
     border-radius: 14px;
-    box-shadow: 0 12px 32px rgba(3,52,110,0.25), 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 12px 32px rgba(28,28,28,0.25), 0 2px 8px rgba(0,0,0,0.06);
     animation: fade-in-up 0.4s ease both;
     animation-delay: 0.08s;
 }
@@ -596,7 +608,7 @@ textarea {
     cursor: pointer;
     width: 100%;
     margin-top: 20px;
-    box-shadow: 0 4px 14px rgba(232,134,11,0.35);
+    box-shadow: 0 4px 14px rgba(111,106,92,0.35);
     transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
 
@@ -630,7 +642,7 @@ textarea {
     border-color: var(--gold-dark);
     background: linear-gradient(135deg, var(--gold), var(--gold-dark));
     color: white;
-    box-shadow: 0 3px 10px rgba(232,134,11,0.3);
+    box-shadow: 0 3px 10px rgba(111,106,92,0.3);
 }
 
 #agencyToggle .agency-btn {
@@ -640,7 +652,7 @@ textarea {
 
 .submit-btn:hover {
     filter: brightness(1.06);
-    box-shadow: 0 6px 18px rgba(232,134,11,0.45);
+    box-shadow: 0 6px 18px rgba(111,106,92,0.45);
 }
 
 .submit-btn:disabled {
@@ -868,6 +880,11 @@ textarea {
     max-width: 500px;
     margin: 0 auto 16px;
     color: white;
+    /* Its own dark band, same reasoning as .logo-container - white text/
+       icons here need a dark backdrop, and the page itself is light now. */
+    background: linear-gradient(135deg, var(--navy-light), var(--navy));
+    border-radius: 12px;
+    padding: 10px 12px;
 }
 
 .hamburger-btn {
