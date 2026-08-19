@@ -1167,6 +1167,70 @@ textarea {
     color: var(--error-text);
 }
 
+.admin-doc-badge-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.admin-doc-reset-btn {
+    background: var(--panel-bg-hover);
+    border: 1px solid var(--panel-border);
+    color: var(--muted);
+    border-radius: 8px;
+    width: 22px;
+    height: 22px;
+    font-size: 0.8rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.admin-edit-btn {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.admin-correct-form {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 10px 12px 12px;
+    margin-top: -8px;
+    margin-bottom: 8px;
+}
+
+.admin-correct-form .form-group {
+    margin-bottom: 8px;
+}
+
+.admin-correct-form label {
+    font-size: 0.78rem;
+}
+
+.admin-correct-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.admin-correct-actions .admin-correct-cancel {
+    flex: 1;
+}
+
+.admin-correct-actions .admin-correct-save {
+    flex: 2;
+    padding: 10px;
+}
+
+.admin-correct-status {
+    margin-top: 8px;
+}
+
 .announcement-card {
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);

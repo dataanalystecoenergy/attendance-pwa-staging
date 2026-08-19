@@ -555,29 +555,62 @@ async function loadAdminAttendance() {
   }
 }
 
+// Tracks whatever's currently rendered (post name-filter) so the delegated
+// click handler below can look an entry up by its row index without
+// needing to embed the identifier string into element IDs.
+let adminAttendanceFiltered = [];
+
+function escapeHtml_(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function renderAdminAttendance() {
   const el = document.getElementById('adminAttendanceList');
   const filterTerm = document.getElementById('adminAttendanceNameFilter').value.toLowerCase().trim();
-  const entries = (adminAttendanceEntries || []).filter(e =>
+  adminAttendanceFiltered = (adminAttendanceEntries || []).filter(e =>
     !filterTerm || String(e.name || '').toLowerCase().includes(filterTerm)
   );
 
-  if (!entries.length) {
+  if (!adminAttendanceFiltered.length) {
     el.innerHTML = '<div class="no-results">No entries found.</div>';
     return;
   }
 
-  el.innerHTML = entries.map(e => {
+  el.innerHTML = adminAttendanceFiltered.map((e, idx) => {
     const timeLabel = (String(e.timestamp || '').match(/(\d{1,2}:\d{2}:\d{2})/) || [])[1] || e.timestamp;
     const purposeClass = e.purpose === 'Time In' ? 'admin-purpose-in' : 'admin-purpose-out';
     return `
       <div class="admin-attendance-row">
         <div class="admin-attendance-time">${timeLabel}</div>
         <div class="admin-attendance-info">
-          <div class="admin-attendance-name">${e.name}</div>
-          <div class="admin-attendance-meta">${e.siteName || ''}${e.agency ? ' · ' + e.agency : ''}</div>
+          <div class="admin-attendance-name">${escapeHtml_(e.name)}</div>
+          <div class="admin-attendance-meta">${escapeHtml_(e.siteName)}${e.agency ? ' · ' + escapeHtml_(e.agency) : ''}</div>
         </div>
         <span class="admin-purpose-badge ${purposeClass}">${e.purpose || ''}</span>
+        <button type="button" class="admin-edit-btn" data-idx="${idx}" title="Correct this entry">✏️</button>
+      </div>
+      <div class="admin-correct-form" id="adminCorrectForm-${idx}" style="display:none;">
+        <div class="form-group">
+          <label>Purpose</label>
+          <select class="admin-correct-purpose">
+            <option value="Time In"${e.purpose === 'Time In' ? ' selected' : ''}>Time In</option>
+            <option value="Time Out"${e.purpose === 'Time Out' ? ' selected' : ''}>Time Out</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Site Name</label>
+          <input type="text" class="admin-correct-site" value="${escapeHtml_(e.siteName)}">
+        </div>
+        <div class="form-group">
+          <label>Reason for correction <span class="required">*</span></label>
+          <input type="text" class="admin-correct-reason" placeholder="e.g. tapped the wrong button">
+        </div>
+        <div class="admin-correct-actions">
+          <button type="button" class="control-btn admin-correct-cancel" data-idx="${idx}">Cancel</button>
+          <button type="button" class="submit-btn admin-correct-save" data-idx="${idx}">Save Correction</button>
+        </div>
+        <div class="admin-correct-status status-message"></div>
       </div>
     `;
   }).join('');
@@ -585,6 +618,70 @@ function renderAdminAttendance() {
 
 document.getElementById('adminAttendanceSearchBtn').addEventListener('click', loadAdminAttendance);
 document.getElementById('adminAttendanceNameFilter').addEventListener('input', renderAdminAttendance);
+
+document.getElementById('adminAttendanceList').addEventListener('click', async (e) => {
+  const editBtn = e.target.closest('.admin-edit-btn');
+  const cancelBtn = e.target.closest('.admin-correct-cancel');
+  const saveBtn = e.target.closest('.admin-correct-save');
+
+  if (editBtn) {
+    const form = document.getElementById('adminCorrectForm-' + editBtn.dataset.idx);
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    return;
+  }
+
+  if (cancelBtn) {
+    document.getElementById('adminCorrectForm-' + cancelBtn.dataset.idx).style.display = 'none';
+    return;
+  }
+
+  if (saveBtn) {
+    const idx = Number(saveBtn.dataset.idx);
+    const entry = adminAttendanceFiltered[idx];
+    const form = document.getElementById('adminCorrectForm-' + idx);
+    const purpose = form.querySelector('.admin-correct-purpose').value;
+    const siteName = form.querySelector('.admin-correct-site').value.trim();
+    const reason = form.querySelector('.admin-correct-reason').value.trim();
+    const statusEl = form.querySelector('.admin-correct-status');
+
+    if (!reason) {
+      statusEl.className = 'admin-correct-status status-message error';
+      statusEl.textContent = 'A reason is required.';
+      statusEl.style.display = 'block';
+      return;
+    }
+
+    saveBtn.disabled = true;
+    statusEl.className = 'admin-correct-status status-message loading';
+    statusEl.textContent = 'Saving...';
+    statusEl.style.display = 'block';
+
+    try {
+      const result = await apiCall('adminCorrectAttendance', {
+        token,
+        data: { identifier: entry.identifier, purpose, siteName, reason },
+      });
+      if (!result.success) throw new Error(result.error || 'Correction failed.');
+
+      // Update both the filtered view's entry and the underlying full
+      // cached list (same object reference isn't guaranteed after a
+      // filter, so update the source list by identifier too).
+      entry.purpose = purpose;
+      entry.siteName = siteName;
+      const sourceEntry = (adminAttendanceEntries || []).find(x => x.identifier === entry.identifier);
+      if (sourceEntry) {
+        sourceEntry.purpose = purpose;
+        sourceEntry.siteName = siteName;
+      }
+
+      renderAdminAttendance();
+    } catch (err) {
+      statusEl.className = 'admin-correct-status status-message error';
+      statusEl.textContent = err.message;
+      saveBtn.disabled = false;
+    }
+  }
+});
 
 async function loadAdminDocumentsOverview() {
   const statusDiv = document.getElementById('adminDocumentsStatus');
@@ -619,10 +716,13 @@ function renderAdminDocumentsOverview() {
 
   el.innerHTML = employees.map(emp => `
     <div class="admin-doc-row">
-      <div class="admin-doc-name">${emp.fullName}</div>
+      <div class="admin-doc-name">${escapeHtml_(emp.fullName)}</div>
       <div class="admin-doc-badges">
         ${emp.documents.map(d => d.uploaded
-          ? `<a href="${d.link}" target="_blank" rel="noopener" class="admin-doc-badge admin-doc-uploaded">${d.type} ✓</a>`
+          ? `<span class="admin-doc-badge-group">
+               <a href="${d.link}" target="_blank" rel="noopener" class="admin-doc-badge admin-doc-uploaded">${d.type} ✓</a>
+               <button type="button" class="admin-doc-reset-btn" data-employee-id="${escapeHtml_(emp.employeeId)}" data-doc-type="${d.type}" title="Reset for re-upload">↺</button>
+             </span>`
           : `<span class="admin-doc-badge admin-doc-missing">${d.type} ✕</span>`
         ).join('')}
       </div>
@@ -631,6 +731,34 @@ function renderAdminDocumentsOverview() {
 }
 
 document.getElementById('adminDocumentsFilter').addEventListener('input', renderAdminDocumentsOverview);
+
+document.getElementById('adminDocumentsOverviewList').addEventListener('click', async (e) => {
+  const resetBtn = e.target.closest('.admin-doc-reset-btn');
+  if (!resetBtn) return;
+
+  const employeeId = resetBtn.dataset.employeeId;
+  const docType = resetBtn.dataset.docType;
+  const targetEmployee = (adminDocumentsEmployees || []).find(x => x.employeeId === employeeId);
+  const empName = targetEmployee ? targetEmployee.fullName : employeeId;
+
+  const reason = prompt(`Reset ${docType} for ${empName}?\n\nThey'll be able to upload it again. Optional reason:`);
+  if (reason === null) return; // cancelled
+
+  resetBtn.disabled = true;
+  try {
+    const result = await apiCall('adminResetDocument', { token, data: { employeeId, docType, reason } });
+    if (!result.success) throw new Error(result.error || 'Reset failed.');
+
+    if (targetEmployee) {
+      const doc = targetEmployee.documents.find(d => d.type === docType);
+      if (doc) { doc.uploaded = false; doc.link = ''; doc.uploadedAt = ''; }
+    }
+    renderAdminDocumentsOverview();
+  } catch (err) {
+    showToast('Could not reset: ' + err.message);
+    resetBtn.disabled = false;
+  }
+});
 
 // ============================================================
 // Leave Application — submits into the existing, separate Leave
