@@ -565,6 +565,24 @@ function escapeHtml_(str) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// "08/19/2026 08:15:32" -> "2026-08-19T08:15" (for an <input type="datetime-local">)
+function toDatetimeLocalValue_(ts) {
+  const m = String(ts || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);
+  if (!m) return '';
+  const [, mm, dd, yyyy, hh, min] = m;
+  return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}T${hh.padStart(2, '0')}:${min}`;
+}
+
+// Reverse of the above - "2026-08-19T08:15" -> "08/19/2026 08:15:00", to
+// keep the locally-cached entry consistent with what the server just saved
+// (seconds always come back as :00 since datetime-local has no seconds field).
+function fromDatetimeLocalValue_(value) {
+  const m = String(value || '').match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!m) return '';
+  const [, yyyy, mm, dd, hh, min] = m;
+  return `${mm}/${dd}/${yyyy} ${hh}:${min}:00`;
+}
+
 function renderAdminAttendance() {
   const el = document.getElementById('adminAttendanceList');
   const filterTerm = document.getElementById('adminAttendanceNameFilter').value.toLowerCase().trim();
@@ -601,6 +619,14 @@ function renderAdminAttendance() {
         <div class="form-group">
           <label>Site Name</label>
           <input type="text" class="admin-correct-site" value="${escapeHtml_(e.siteName)}">
+        </div>
+        <div class="form-group">
+          <label>Deployment Date</label>
+          <input type="date" class="admin-correct-deployment-date" value="${escapeHtml_(e.deploymentDate)}">
+        </div>
+        <div class="form-group">
+          <label>Time</label>
+          <input type="datetime-local" class="admin-correct-timestamp" value="${toDatetimeLocalValue_(e.timestamp)}">
         </div>
         <div class="form-group">
           <label>Reason for correction <span class="required">*</span></label>
@@ -641,12 +667,20 @@ document.getElementById('adminAttendanceList').addEventListener('click', async (
     const form = document.getElementById('adminCorrectForm-' + idx);
     const purpose = form.querySelector('.admin-correct-purpose').value;
     const siteName = form.querySelector('.admin-correct-site').value.trim();
+    const deploymentDate = form.querySelector('.admin-correct-deployment-date').value;
+    const timestampLocal = form.querySelector('.admin-correct-timestamp').value;
     const reason = form.querySelector('.admin-correct-reason').value.trim();
     const statusEl = form.querySelector('.admin-correct-status');
 
     if (!reason) {
       statusEl.className = 'admin-correct-status status-message error';
       statusEl.textContent = 'A reason is required.';
+      statusEl.style.display = 'block';
+      return;
+    }
+    if (!timestampLocal) {
+      statusEl.className = 'admin-correct-status status-message error';
+      statusEl.textContent = 'Time is required.';
       statusEl.style.display = 'block';
       return;
     }
@@ -659,19 +693,18 @@ document.getElementById('adminAttendanceList').addEventListener('click', async (
     try {
       const result = await apiCall('adminCorrectAttendance', {
         token,
-        data: { identifier: entry.identifier, purpose, siteName, reason },
+        data: { identifier: entry.identifier, purpose, siteName, deploymentDate, timestamp: timestampLocal, reason },
       });
       if (!result.success) throw new Error(result.error || 'Correction failed.');
 
       // Update both the filtered view's entry and the underlying full
       // cached list (same object reference isn't guaranteed after a
       // filter, so update the source list by identifier too).
-      entry.purpose = purpose;
-      entry.siteName = siteName;
+      const newTimestamp = fromDatetimeLocalValue_(timestampLocal);
+      Object.assign(entry, { purpose, siteName, deploymentDate, timestamp: newTimestamp });
       const sourceEntry = (adminAttendanceEntries || []).find(x => x.identifier === entry.identifier);
       if (sourceEntry) {
-        sourceEntry.purpose = purpose;
-        sourceEntry.siteName = siteName;
+        Object.assign(sourceEntry, { purpose, siteName, deploymentDate, timestamp: newTimestamp });
       }
 
       renderAdminAttendance();

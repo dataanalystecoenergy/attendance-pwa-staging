@@ -534,7 +534,7 @@ label {
     font-size: 0.9rem;
 }
 
-input[type="text"], input[type="email"], input[type="date"], input[type="password"],
+input[type="text"], input[type="email"], input[type="date"], input[type="datetime-local"], input[type="password"],
 input[inputmode="numeric"], select, textarea {
     width: 100%;
     padding: 12px;
@@ -556,15 +556,17 @@ input[inputmode="numeric"], select, textarea {
    width/border/background rules above entirely, which is what actually
    pokes past the card's edge - -webkit-appearance:none strips that native
    chrome so it renders as a plain box like every other input, left-aligned
-   and sized the same way. Tapping it still opens the native iOS date wheel. */
-input[type="date"] {
+   and sized the same way. Tapping it still opens the native iOS date wheel.
+   Same fix applies to datetime-local (used for the admin correction form's
+   Time field) for the identical reason. */
+input[type="date"], input[type="datetime-local"] {
     min-width: 0;
     max-width: 100%;
     -webkit-appearance: none;
     appearance: none;
 }
 
-input[type="text"]:focus, input[type="email"]:focus, input[type="date"]:focus,
+input[type="text"]:focus, input[type="email"]:focus, input[type="date"]:focus, input[type="datetime-local"]:focus,
 input[type="password"]:focus, input[inputmode="numeric"]:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--navy-light);
