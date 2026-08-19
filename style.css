@@ -1,24 +1,31 @@
 ﻿:root {
-    --navy-deep: #041c40;
-    --navy: #03346E;
-    --navy-light: #10499b;
+    /* Deep forest/emerald green + kept gold - ties into "EcoEnergy Solar"
+       (green = eco, gold = solar/sun). Variable names (--navy-*) are kept
+       as-is even though they're green now - renaming would mean touching
+       every one of the ~26 places that reference them, for a purely
+       cosmetic gain. Deliberately a dark, desaturated green (not close to
+       --success-text's brighter green) so status badges elsewhere still
+       read as distinct from the brand color, not redundant with it. */
+    --navy-deep: #06251c;
+    --navy: #0d4a3a;
+    --navy-light: #16694f;
     --gold: #f5a623;
     --gold-dark: #d9820a;
-    --ink: #22303f;
-    --muted: #6b7a8d;
-    --line: #e6e9ee;
+    --ink: #1e2b25;
+    --muted: #5f7268;
+    --line: #e2ebe6;
 
     --card-bg: #ffffff;
     --label-text: #333333;
     --heading-color: var(--navy);
     --input-bg: #ffffff;
-    --input-border: #e2e2e2;
-    --panel-bg: #fafafa;
-    --panel-bg-hover: #e0e0e0;
-    --panel-border: #dddddd;
+    --input-border: #dce8e2;
+    --panel-bg: #f3f8f5;
+    --panel-bg-hover: #e2ede8;
+    --panel-border: #d5e5dd;
     --overlay-card-bg: #ffffff;
 
-    --accent-blue: #2f6fed;
+    --accent-blue: #178a5c;
 
     --success-bg: #e5f6ea;
     --success-text: #1e7a37;
@@ -36,25 +43,25 @@
 
 /* Follows the phone/browser's system light-or-dark setting - the logo is a
    transparent PNG (white wordmark) that only reads on a dark backdrop, so
-   the header stays dark navy in both themes; only the card content below
+   the header stays dark green in both themes; only the card content below
    switches. Overriding --navy-light here also re-tints every button/focus
    ring/gradient that already references it, without needing per-selector
    dark rules for each one. */
 @media (prefers-color-scheme: dark) {
     :root {
-        --card-bg: #16232f;
-        --label-text: #d7dee6;
-        --heading-color: #6fa8f0;
-        --ink: #e8edf2;
-        --muted: #93a4b6;
-        --line: #2c3e50;
-        --navy-light: #3d7fd6;
-        --input-bg: #1e2e3d;
-        --input-border: #38495c;
-        --panel-bg: #1b2937;
-        --panel-bg-hover: #24374a;
-        --panel-border: #34465a;
-        --overlay-card-bg: #16232f;
+        --card-bg: #16291f;
+        --label-text: #d7e6dd;
+        --heading-color: #6fd6a8;
+        --ink: #e8f2ec;
+        --muted: #93b6a4;
+        --line: #2c4a3a;
+        --navy-light: #2fa876;
+        --input-bg: #1e3728;
+        --input-border: #385c47;
+        --panel-bg: #1b3729;
+        --panel-bg-hover: #244a35;
+        --panel-border: #345a42;
+        --overlay-card-bg: #16291f;
 
         --success-bg: #16321f;
         --success-text: #7fd99a;
@@ -69,7 +76,7 @@
         --notice-text: #f0cd7a;
         --notice-border: #6b5419;
 
-        --accent-blue: #5b8def;
+        --accent-blue: #4fc98f;
     }
 }
 
@@ -209,7 +216,7 @@ button, input, textarea, select {
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(3,52,110,0.35);
+    box-shadow: 0 4px 14px rgba(6,37,28,0.35);
     transition: filter 0.12s ease, transform 0.12s ease;
 }
 
@@ -392,7 +399,7 @@ button, input, textarea, select {
 
 .records-btn {
     background: linear-gradient(135deg, var(--navy-light), var(--navy));
-    box-shadow: 0 4px 14px rgba(3,52,110,0.35);
+    box-shadow: 0 4px 14px rgba(6,37,28,0.35);
 }
 
 .calendar-nav {
@@ -487,7 +494,7 @@ button, input, textarea, select {
     background: var(--card-bg);
     padding: 20px;
     border-radius: 14px;
-    box-shadow: 0 12px 32px rgba(3,52,110,0.25), 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 12px 32px rgba(6,37,28,0.25), 0 2px 8px rgba(0,0,0,0.06);
     animation: fade-in-up 0.4s ease both;
     animation-delay: 0.08s;
 }
