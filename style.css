@@ -1080,6 +1080,93 @@ textarea {
     font-style: italic;
 }
 
+.admin-attendance-list, .admin-documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.admin-attendance-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.admin-attendance-time {
+    flex-shrink: 0;
+    width: 66px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.admin-attendance-name {
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 0.9rem;
+}
+
+.admin-attendance-meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.admin-purpose-badge {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 3px 9px;
+}
+
+.admin-purpose-in { background: var(--success-bg); color: var(--success-text); }
+.admin-purpose-out { background: var(--loading-bg); color: var(--loading-text); }
+
+.admin-doc-row {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.admin-doc-name {
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+}
+
+.admin-doc-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.admin-doc-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 3px 9px;
+    text-decoration: none;
+}
+
+.admin-doc-uploaded {
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.admin-doc-missing {
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+
 .announcement-card {
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);

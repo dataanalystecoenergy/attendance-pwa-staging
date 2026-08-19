@@ -72,6 +72,8 @@
         </div>
         <div class="nav-drawer-items">
             <button type="button" class="nav-item" data-nav="home"><span class="nav-icon">🏠</span>Home</button>
+            <!-- Only shown for accounts on the Admins sheet (employee.isAdmin, set at login) -->
+            <button type="button" class="nav-item" data-nav="admin" id="adminNavItem" style="display:none;"><span class="nav-icon">🛡️</span>Admin</button>
             <button type="button" class="nav-item" data-nav="personal"><span class="nav-icon">👤</span>Personal Information</button>
             <button type="button" class="nav-item" data-nav="leave"><span class="nav-icon">📝</span>Leave Application</button>
             <button type="button" class="nav-item" data-nav="records"><span class="nav-icon">🕒</span>Daily Time Record</button>
@@ -488,6 +490,43 @@
             <div id="holidayCalendarGrid" class="calendar-grid"></div>
 
             <div id="holidayMonthList" class="holidays-list"></div>
+        </div>
+    </div>
+
+    <!-- ================= ADMIN PAGE ================= -->
+    <!-- Read-only by design (see Api.gs.txt's Admin section comment): no
+         editing here, just visibility into today's/a chosen day's Time
+         In/Out entries and who has/hasn't submitted their documents. Only
+         reachable via the drawer's Admin item, which only shows for
+         employee.isAdmin accounts (checked server-side too - every admin
+         endpoint re-verifies against the Admins sheet itself). -->
+    <div id="adminPage" style="display:none;">
+        <div class="home-topbar">
+            <button type="button" class="hamburger-btn page-hamburger-btn" aria-label="Open menu">☰</button>
+            <div class="home-topbar-title">Admin</div>
+            <button type="button" class="home-topbar-action page-back-btn">‹ Home</button>
+        </div>
+        <div class="form-container">
+            <div class="purpose-toggle" id="adminTabToggle" style="margin-bottom:14px;">
+                <button type="button" class="purpose-btn selected" id="adminTabAttendanceBtn" data-tab="attendance">🕒 Attendance</button>
+                <button type="button" class="purpose-btn" id="adminTabDocumentsBtn" data-tab="documents">📄 Documents</button>
+            </div>
+
+            <div id="adminAttendanceTab">
+                <div class="calendar-nav" style="margin-bottom:10px;">
+                    <input type="date" id="adminAttendanceDate" style="flex:1; padding:10px; border:1px solid var(--input-border); border-radius:8px; background:var(--input-bg); color:var(--label-text);">
+                    <button type="button" id="adminAttendanceSearchBtn" class="control-btn" style="flex:0 0 auto;">Search</button>
+                </div>
+                <input type="text" id="adminAttendanceNameFilter" class="search-input" placeholder="Filter by name..." style="margin-bottom:10px; width:100%;">
+                <div id="adminAttendanceStatus" class="status-message"></div>
+                <div id="adminAttendanceList" class="admin-attendance-list"></div>
+            </div>
+
+            <div id="adminDocumentsTab" style="display:none;">
+                <input type="text" id="adminDocumentsFilter" class="search-input" placeholder="Filter by name..." style="margin-bottom:10px; width:100%;">
+                <div id="adminDocumentsStatus" class="status-message"></div>
+                <div id="adminDocumentsOverviewList" class="admin-documents-list"></div>
+            </div>
         </div>
     </div>
 

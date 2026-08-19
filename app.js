@@ -38,7 +38,7 @@ function authActive() {
 // install-gate flow can call showHome()/showLogin() synchronously at
 // module-load time via initInstallUI() below - a `const` declared any
 // later would still be in its temporal dead zone at that point and throw.
-const ALL_SCREEN_IDS = ['loginScreen', 'homeScreen', 'formContainer', 'leavePage', 'recordsPage', 'documentsPage', 'holidaysPage'];
+const ALL_SCREEN_IDS = ['loginScreen', 'homeScreen', 'formContainer', 'leavePage', 'recordsPage', 'documentsPage', 'holidaysPage', 'adminPage'];
 function showScreen(id) {
   ALL_SCREEN_IDS.forEach(sid => {
     document.getElementById(sid).style.display = sid === id ? 'block' : 'none';
@@ -169,6 +169,7 @@ function showLogin() {
 function showHome() {
   showScreen('homeScreen');
   document.getElementById('drawerName').textContent = employee ? employee.fullName : '';
+  document.getElementById('adminNavItem').style.display = employee && employee.isAdmin ? 'flex' : 'none';
 
   const nameParts = employee && employee.fullName ? employee.fullName.split(',') : [];
   const lastName = nameParts[0] ? nameParts[0].trim() : '';
@@ -246,6 +247,8 @@ function logout() {
   myRecordsData = null;
   dayRecordMap = null;
   localStorage.removeItem(MY_RECORDS_CACHE_KEY);
+  adminAttendanceEntries = null;
+  adminDocumentsEmployees = null;
   attendanceFormInitialized = false;
   showLogin();
 }
@@ -405,6 +408,8 @@ document.querySelectorAll('.nav-item[data-nav]').forEach((btn) => {
       openDocumentsPage();
     } else if (nav === 'calendar') {
       openHolidaysPage();
+    } else if (nav === 'admin') {
+      openAdminPage();
     } else if (NAV_COMING_SOON_LABELS[nav]) {
       showToast(`${NAV_COMING_SOON_LABELS[nav]} isn't built yet — coming soon.`);
     }
@@ -495,6 +500,137 @@ async function loadAnnouncements() {
     el.innerHTML = `<div class="no-results">Could not load announcements.</div>`;
   }
 }
+
+// ============================================================
+// Admin — read-only Time In/Out + Documents overview for accounts on the
+// Admins sheet (employee.isAdmin, set at login). No editing here on
+// purpose - see Api.gs.txt's Admin section comment for why.
+// ============================================================
+let adminAttendanceEntries = null;
+let adminDocumentsEmployees = null;
+
+function openAdminPage() {
+  showScreen('adminPage');
+  if (!document.getElementById('adminAttendanceDate').value) {
+    document.getElementById('adminAttendanceDate').value = serverToday || new Date().toISOString().slice(0, 10);
+  }
+  if (!adminAttendanceEntries) {
+    loadAdminAttendance();
+  } else {
+    renderAdminAttendance();
+  }
+}
+
+document.getElementById('adminTabAttendanceBtn').addEventListener('click', () => switchAdminTab('attendance'));
+document.getElementById('adminTabDocumentsBtn').addEventListener('click', () => switchAdminTab('documents'));
+
+function switchAdminTab(tab) {
+  document.getElementById('adminTabAttendanceBtn').classList.toggle('selected', tab === 'attendance');
+  document.getElementById('adminTabDocumentsBtn').classList.toggle('selected', tab === 'documents');
+  document.getElementById('adminAttendanceTab').style.display = tab === 'attendance' ? 'block' : 'none';
+  document.getElementById('adminDocumentsTab').style.display = tab === 'documents' ? 'block' : 'none';
+
+  if (tab === 'documents' && !adminDocumentsEmployees) {
+    loadAdminDocumentsOverview();
+  }
+}
+
+async function loadAdminAttendance() {
+  const statusDiv = document.getElementById('adminAttendanceStatus');
+  statusDiv.className = 'status-message loading';
+  statusDiv.textContent = 'Loading attendance...';
+  statusDiv.style.display = 'block';
+  document.getElementById('adminAttendanceList').innerHTML = '';
+
+  try {
+    const dateIso = document.getElementById('adminAttendanceDate').value;
+    const result = await apiCall('adminGetAttendance', { token, data: { date: dateIso } });
+    if (result.error) throw new Error(result.error);
+    adminAttendanceEntries = result.entries || [];
+    statusDiv.style.display = 'none';
+    renderAdminAttendance();
+  } catch (err) {
+    statusDiv.className = 'status-message error';
+    statusDiv.textContent = 'Could not load attendance: ' + err.message;
+  }
+}
+
+function renderAdminAttendance() {
+  const el = document.getElementById('adminAttendanceList');
+  const filterTerm = document.getElementById('adminAttendanceNameFilter').value.toLowerCase().trim();
+  const entries = (adminAttendanceEntries || []).filter(e =>
+    !filterTerm || String(e.name || '').toLowerCase().includes(filterTerm)
+  );
+
+  if (!entries.length) {
+    el.innerHTML = '<div class="no-results">No entries found.</div>';
+    return;
+  }
+
+  el.innerHTML = entries.map(e => {
+    const timeLabel = (String(e.timestamp || '').match(/(\d{1,2}:\d{2}:\d{2})/) || [])[1] || e.timestamp;
+    const purposeClass = e.purpose === 'Time In' ? 'admin-purpose-in' : 'admin-purpose-out';
+    return `
+      <div class="admin-attendance-row">
+        <div class="admin-attendance-time">${timeLabel}</div>
+        <div class="admin-attendance-info">
+          <div class="admin-attendance-name">${e.name}</div>
+          <div class="admin-attendance-meta">${e.siteName || ''}${e.agency ? ' · ' + e.agency : ''}</div>
+        </div>
+        <span class="admin-purpose-badge ${purposeClass}">${e.purpose || ''}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('adminAttendanceSearchBtn').addEventListener('click', loadAdminAttendance);
+document.getElementById('adminAttendanceNameFilter').addEventListener('input', renderAdminAttendance);
+
+async function loadAdminDocumentsOverview() {
+  const statusDiv = document.getElementById('adminDocumentsStatus');
+  statusDiv.className = 'status-message loading';
+  statusDiv.textContent = 'Loading documents overview...';
+  statusDiv.style.display = 'block';
+  document.getElementById('adminDocumentsOverviewList').innerHTML = '';
+
+  try {
+    const result = await apiCall('adminGetDocumentsOverview', { token });
+    if (result.error) throw new Error(result.error);
+    adminDocumentsEmployees = result.employees || [];
+    statusDiv.style.display = 'none';
+    renderAdminDocumentsOverview();
+  } catch (err) {
+    statusDiv.className = 'status-message error';
+    statusDiv.textContent = 'Could not load documents overview: ' + err.message;
+  }
+}
+
+function renderAdminDocumentsOverview() {
+  const el = document.getElementById('adminDocumentsOverviewList');
+  const filterTerm = document.getElementById('adminDocumentsFilter').value.toLowerCase().trim();
+  const employees = (adminDocumentsEmployees || []).filter(emp =>
+    !filterTerm || String(emp.fullName || '').toLowerCase().includes(filterTerm)
+  );
+
+  if (!employees.length) {
+    el.innerHTML = '<div class="no-results">No employees found.</div>';
+    return;
+  }
+
+  el.innerHTML = employees.map(emp => `
+    <div class="admin-doc-row">
+      <div class="admin-doc-name">${emp.fullName}</div>
+      <div class="admin-doc-badges">
+        ${emp.documents.map(d => d.uploaded
+          ? `<a href="${d.link}" target="_blank" rel="noopener" class="admin-doc-badge admin-doc-uploaded">${d.type} ✓</a>`
+          : `<span class="admin-doc-badge admin-doc-missing">${d.type} ✕</span>`
+        ).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('adminDocumentsFilter').addEventListener('input', renderAdminDocumentsOverview);
 
 // ============================================================
 // Leave Application — submits into the existing, separate Leave
