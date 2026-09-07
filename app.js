@@ -623,6 +623,8 @@ function renderAdminAttendance() {
           <select class="admin-correct-purpose">
             <option value="Time In"${e.purpose === 'Time In' ? ' selected' : ''}>Time In</option>
             <option value="Time Out"${e.purpose === 'Time Out' ? ' selected' : ''}>Time Out</option>
+            <option value="Break Out"${e.purpose === 'Break Out' ? ' selected' : ''}>Break Out</option>
+            <option value="Break In"${e.purpose === 'Break In' ? ' selected' : ''}>Break In</option>
           </select>
         </div>
         <div class="form-group">
@@ -1761,6 +1763,27 @@ function setupPurposeToggle() {
   });
 }
 
+function setupBreakPurposeVisibility() {
+  const select = document.getElementById('siteName');
+  const breakGroup = document.getElementById('breakPurposeGroup');
+  const hiddenInput = document.getElementById('purpose');
+
+  function sync() {
+    const isPagbilao = select.value === 'Pagbilao';
+    breakGroup.style.display = isPagbilao ? 'flex' : 'none';
+    if (!isPagbilao) {
+      const selectedBreakBtn = breakGroup.querySelector('.purpose-btn.selected');
+      if (selectedBreakBtn) {
+        selectedBreakBtn.classList.remove('selected');
+        hiddenInput.value = '';
+      }
+    }
+  }
+
+  select.addEventListener('change', sync);
+  sync();
+}
+
 function setupSiteSearch() {
   const searchInput = document.getElementById('siteSearch');
   const clearBtn = document.getElementById('clearSiteSearch');
@@ -1897,6 +1920,7 @@ function initAttendanceForm() {
   setDefaultDate();
   setupSiteSearch();
   setupPurposeToggle();
+  setupBreakPurposeVisibility();
   startWatermarkLogoLoad();
 }
 
