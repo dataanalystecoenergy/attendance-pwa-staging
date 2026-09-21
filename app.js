@@ -1750,7 +1750,7 @@ function setDefaultDate() {
 }
 
 function setupPurposeToggle() {
-  const buttons = document.querySelectorAll('.purpose-btn:not(.agency-btn)');
+  const buttons = document.querySelectorAll('.purpose-btn:not(.agency-btn):not(.worker-type-btn)');
   const hiddenInput = document.getElementById('purpose');
 
   buttons.forEach(btn => {
@@ -1764,24 +1764,54 @@ function setupPurposeToggle() {
 }
 
 function setupBreakPurposeVisibility() {
-  const select = document.getElementById('siteName');
+  const siteSelect = document.getElementById('siteName');
+  const workerTypeGroup = document.getElementById('pagbilaoWorkerTypeGroup');
+  const workerTypeButtons = document.querySelectorAll('.worker-type-btn');
+  const workerTypeHidden = document.getElementById('pagbilaoWorkerType');
   const breakGroup = document.getElementById('breakPurposeGroup');
-  const hiddenInput = document.getElementById('purpose');
+  const purposeHidden = document.getElementById('purpose');
 
-  function sync() {
-    const isPagbilao = select.value === 'Pagbilao';
-    breakGroup.style.display = isPagbilao ? 'flex' : 'none';
-    if (!isPagbilao) {
-      const selectedBreakBtn = breakGroup.querySelector('.purpose-btn.selected');
-      if (selectedBreakBtn) {
-        selectedBreakBtn.classList.remove('selected');
-        hiddenInput.value = '';
-      }
+  function clearBreakSelection() {
+    const selectedBreakBtn = breakGroup.querySelector('.purpose-btn.selected');
+    if (selectedBreakBtn) {
+      selectedBreakBtn.classList.remove('selected');
+      purposeHidden.value = '';
     }
   }
 
-  select.addEventListener('change', sync);
-  sync();
+  function clearWorkerTypeSelection() {
+    workerTypeButtons.forEach(b => b.classList.remove('selected'));
+    workerTypeHidden.value = '';
+  }
+
+  function syncBreakVisibility() {
+    const isSiteWorker = workerTypeHidden.value === 'Site Worker';
+    breakGroup.style.display = isSiteWorker ? 'flex' : 'none';
+    if (!isSiteWorker) clearBreakSelection();
+  }
+
+  function syncWorkerTypeVisibility() {
+    const isPagbilao = siteSelect.value === 'Pagbilao';
+    workerTypeGroup.style.display = isPagbilao ? 'block' : 'none';
+    if (!isPagbilao) {
+      clearWorkerTypeSelection();
+      document.getElementById('pagbilaoWorkerTypeError').style.display = 'none';
+    }
+    syncBreakVisibility();
+  }
+
+  workerTypeButtons.forEach(btn => {
+    btn.addEventListener('click', function () {
+      workerTypeButtons.forEach(b => b.classList.remove('selected'));
+      this.classList.add('selected');
+      workerTypeHidden.value = this.dataset.value;
+      document.getElementById('pagbilaoWorkerTypeError').style.display = 'none';
+      syncBreakVisibility();
+    });
+  });
+
+  siteSelect.addEventListener('change', syncWorkerTypeVisibility);
+  syncWorkerTypeVisibility();
 }
 
 function setupSiteSearch() {
@@ -1885,6 +1915,16 @@ function validateAgency() {
   return true;
 }
 
+function validatePagbilaoWorkerType() {
+  const isPagbilao = document.getElementById('siteName').value === 'Pagbilao';
+  if (!isPagbilao) return true;
+  if (!document.getElementById('pagbilaoWorkerType').value) {
+    document.getElementById('pagbilaoWorkerTypeError').style.display = 'block';
+    return false;
+  }
+  return true;
+}
+
 function validateSubmitterEmail() {
   if (authActive()) return true; // identity comes from the session instead
   const emailField = document.getElementById('submitterEmail');
@@ -1930,14 +1970,16 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
   const namesOk = validateNames();
   const purposeOk = validatePurpose();
   const agencyOk = validateAgency();
+  const workerTypeOk = validatePagbilaoWorkerType();
   const photoOk = validatePhoto();
   const emailOk = validateSubmitterEmail();
 
-  if (!namesOk || !purposeOk || !agencyOk || !photoOk || !emailOk) {
+  if (!namesOk || !purposeOk || !agencyOk || !workerTypeOk || !photoOk || !emailOk) {
     if (!emailOk) showMessage('Please enter a valid email address.', 'error');
     else if (!namesOk) showMessage('Please select at least one name.', 'error');
     else if (!purposeOk) showMessage('Please select a purpose (Time In / Time Out).', 'error');
     else if (!agencyOk) showMessage('Please select an agency.', 'error');
+    else if (!workerTypeOk) showMessage('Please select Site Worker or Office Based.', 'error');
     else showMessage('Please take a photo.', 'error');
     return;
   }
