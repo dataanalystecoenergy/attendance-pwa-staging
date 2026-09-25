@@ -1830,6 +1830,13 @@ function setupSiteSearch() {
     if (visible.length === 1) {
       select.value = visible[0].value;
       searchInput.value = visible[0].text;
+      // Setting .value directly does NOT fire a native change event, so
+      // anything listening for site changes (the Pagbilao Site
+      // Worker/Office Based toggle) would silently never show up when the
+      // site was picked by typing to auto-narrow-and-select instead of
+      // clicking the option directly. Firing it manually keeps both
+      // selection paths behaving identically.
+      select.dispatchEvent(new Event('change'));
     }
   });
 
